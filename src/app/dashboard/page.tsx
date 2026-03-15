@@ -66,7 +66,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const extractedUser = extractUserFromToken();
     setUsername(extractedUser);
-  }, [setUsername]);
+  }, []);
 
   // ── Effect 2: Mode-switch / startup effect ──────────────────────────────────
   useEffect(() => {
@@ -108,14 +108,14 @@ export default function DashboardPage() {
       stopCountdown();
       disconnect();
     };
-  }, [dataMode, username, disconnect, startCountdown, stopCountdown, handleDataUpdate]);
+  }, [dataMode, username]);
 
   // ── Effect 3: Wire sensor data → analysis buffer ─────────────────────────────
   useEffect(() => {
     if (sensorData) {
       addAnalysisData(sensorData);
     }
-  }, [sensorData, addAnalysisData]);
+  }, [sensorData]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleClearData = () => {
