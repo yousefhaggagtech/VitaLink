@@ -1,0 +1,26 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '22'
+
+steps:
+- task: UseNode@1
+  inputs:
+    version: '$(nodeVersion)'
+
+- script: |
+    npm ci
+    npm run build
+  displayName: 'Install and build'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'out'
+    ArtifactName: 'site'
+    publishLocation: 'Container'
