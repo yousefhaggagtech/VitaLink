@@ -4,12 +4,9 @@ const nextConfig: NextConfig = {
   // Enable React strict mode for better development experience
   reactStrictMode: true,
   
-  // ---------------------------------------------------------
-  // هام: basePath للـ GitHub Pages فقط، لا يعمل على localhost
-  // يضاف تلقائياً في production، يُحذف في development
-  // ---------------------------------------------------------
-  ...(process.env.NODE_ENV === 'production' && {
-    basePath: '/main-front',
+ ...(process.env.NODE_ENV === 'production' && {
+    basePath: '/VitaLink',
+    assetPrefix: '/VitaLink', 
   }),
   
   // Enable static export for GitHub Pages deployment
