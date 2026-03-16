@@ -7,7 +7,7 @@ import  {DashboardHeader}  from "@/app/dashboard/components/layout/Dashboardhead
 import Sidebar from "@/app/dashboard/components/Sidebar/sidebar";
 import MetricsGrid from "@/app/dashboard/components/metrics/MetricsGrid";
 import AIInsightPanel from "@/app/dashboard/components/analysis/AIInsightPanel";
-import ChartsGrid from "@/app/dashboard/components/Charts/ChartsGrid";
+import ChartsGrid from "@/app/dashboard/components/charts/ChartsGrid";
 import Footer from "@/app/dashboard/components/layout/Footer";
  
 import { THEMES } from "@/domain/constants";
