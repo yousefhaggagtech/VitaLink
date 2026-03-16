@@ -171,7 +171,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
       </div>
  
       {/* ── Value section — GSR gets a level indicator, others get numeric ── */}
-      {label === "GSR Level" ? (
+      {label === "Effort level" ? (
         <>
           {/* GSR: level-based visual — no raw number shown */}
           <div style={{ marginTop: "6px", marginBottom: "4px" }}>

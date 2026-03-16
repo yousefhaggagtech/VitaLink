@@ -27,7 +27,7 @@ export const icons = {
   'Heart Rate': '❤️',
   'Blood Oxygen': '🫧',
   'Body Temperature': '🌡️',
-  'GSR Level': '💧',
+  'Effort level': '💧',
 } as const;
 
 // OpenRouter Configuration

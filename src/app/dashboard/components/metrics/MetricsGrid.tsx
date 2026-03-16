@@ -49,7 +49,7 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ theme, sensorData, statuses }
         max={HEALTH_THRESHOLDS.TEMP_MAX}
       />
       <MetricCard
-        label="GSR Level"
+        label="Effort level"
         value={statuses.gsrValue}
         unit="Ohms"
         status={statuses.gsrStatus}

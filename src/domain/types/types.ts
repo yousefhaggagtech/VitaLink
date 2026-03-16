@@ -54,7 +54,7 @@ export type JwtPayload = {
 };
 
 // Component Props
-export type IconLabel = 'Heart Rate' | 'Blood Oxygen' | 'Body Temperature' | 'GSR Level';
+export type IconLabel = 'Heart Rate' | 'Blood Oxygen' | 'Body Temperature' | 'Effort level';
 
 export interface MetricCardProps {
   label: IconLabel;
