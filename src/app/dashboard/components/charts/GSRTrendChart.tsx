@@ -1,10 +1,11 @@
 "use client";
-
+ 
 import React, { useState, useEffect } from "react";
 import { HealthStatusChartProps } from "@/domain/types/types";
-import ChartWrapper from "@/app/dashboard/components/charts/ChartWrapper";
+import ChartWrapper from "@/app/dashboard/components/Charts/ChartWrapper";
+import GSRLevelIndicator from "@/app/dashboard/components/metrics/Gsrlevelindicator";
 import dynamic from "next/dynamic";
-
+ 
 const AreaChart = dynamic(() => import("recharts").then(mod => mod.AreaChart), { ssr: false });
 const XAxis = dynamic(() => import("recharts").then(mod => mod.XAxis), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then(mod => mod.YAxis), { ssr: false });
@@ -12,50 +13,101 @@ const CartesianGrid = dynamic(() => import("recharts").then(mod => mod.Cartesian
 const Tooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false });
 const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false });
 const Area = dynamic(() => import("recharts").then(mod => mod.Area), { ssr: false });
-
+ 
 const GSRTrendChart: React.FC<HealthStatusChartProps> = ({ historicalData, theme }) => {
+  // ──  SSR guard ─────────────────────────────────────────────
   const [isClient, setIsClient] = useState(false);
-  const gsrColor = "#00FFFF";
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
+  useEffect(() => { setIsClient(true); }, []);
+ 
+  // ── accent color ──────────────────────────────────────────
+  const color  = theme.accent.primary;
+  const latest = historicalData[historicalData.length - 1];
+ 
   if (!isClient) return null;
-
+ 
   return (
-    <ChartWrapper title="GSR (GALVANIC SKIN RESPONSE) TREND" theme={theme}>
-      <ResponsiveContainer width="100%" height={280}>
-        <AreaChart
-          data={historicalData}
-          margin={{ top: 30, right: 30, left: 5, bottom: 30 }}
-        >
+    // ──  ChartWrapper keeps the export button ─────────────────
+    <ChartWrapper title="GSR Level (μS)" theme={theme}>
+ 
+      {/* header — level indicator replaces raw numeric value */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: "16px",
+      }}>
+        <span style={{
+          fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
+          textTransform: "uppercase", color: theme.text.tertiary,
+        }}>
+          Galvanic Skin Response
+        </span>
+        {latest && (
+          /*
+            latest.sweat is the raw sensor value (0–100 scale).
+            Pass it directly — thresholds (0–40 / 41–75 / 76+) apply at this scale.
+          */
+          <GSRLevelIndicator
+            rawValue={latest.sweat}
+            theme={theme}
+            variant="full"
+            showTooltip={true}
+          />
+        )}
+      </div>
+ 
+      {/* chart visuals,  dataKey (sweat) ✓ matches both */}
+      <ResponsiveContainer width="100%" height={180}>
+        <AreaChart data={historicalData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
           <defs>
-            <linearGradient id="colorGSR" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={gsrColor} stopOpacity={0.8} />
-              <stop offset="95%" stopColor={gsrColor} stopOpacity={0.1} />
+            <linearGradient id="gradGSR" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor={color} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke={theme.border.light} horizontal={true} vertical={false} />
-          <XAxis dataKey="time" stroke={theme.text.tertiary} style={{ fontSize: '0.75rem' }} />
-          <YAxis stroke={theme.text.tertiary} style={{ fontSize: '0.75rem' }} />
-          <Tooltip
-            contentStyle={{ backgroundColor: theme.background.secondary, border: `1px solid ${theme.border.medium}`, borderRadius: '8px', color: theme.text.primary }}
-            labelStyle={{ color: theme.text.primary }}
+ 
+          <CartesianGrid strokeDasharray="2 6" stroke={theme.border.light} vertical={false} />
+          <XAxis
+            dataKey="time"
+            stroke="transparent"
+            tick={{ fill: theme.text.tertiary, fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+            interval="preserveStartEnd"
           />
+          <YAxis
+            stroke="transparent"
+            tick={{ fill: theme.text.tertiary, fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+            width={40}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: theme.background.tertiary,
+              border: `1px solid ${theme.border.medium}`,
+              borderRadius: "8px",
+              fontSize: "12px",
+            }}
+            labelStyle={{ color: theme.text.secondary }}
+            itemStyle={{ color }}
+          />
+ 
+         
           <Area
             type="monotone"
             dataKey="sweat"
-            stroke={gsrColor}
-            fillOpacity={1}
-            fill="url(#colorGSR)"
-            strokeWidth={3}
-            name="GSR (Ohms)"
+            stroke={color}
+            strokeWidth={2}
+            fill="url(#gradGSR)"
+            dot={false}
+            name="GSR (μS)"
+            style={{ filter: `drop-shadow(0 0 4px ${color})` }}
           />
         </AreaChart>
       </ResponsiveContainer>
     </ChartWrapper>
   );
 };
-
+ 
 export default GSRTrendChart;

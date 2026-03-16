@@ -100,7 +100,6 @@ const ChartWrapper: React.FC<ChartWrapperProps> = ({ title, children, theme }) =
             animation: 'bounce-in 0.6s ease-out',
           }}
         >
-          <span>📊</span>
           <span>{isDownloading ? 'Saving...' : 'Export'}</span>
         </button>
       </div>

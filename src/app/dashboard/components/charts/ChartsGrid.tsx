@@ -3,10 +3,10 @@
 import React from "react";
 import { Theme } from "@/domain/types/types";
 import { HistoricalData } from "@/domain/entities/SensorData";
-import HealthStatusChart from "@/app/dashboard/components/charts/HealthStatusChart";
-import TemperatureTrendChart from "@/app/dashboard/components/charts/TemperatureTrendChart";
-import GSRTrendChart from "@/app/dashboard/components/charts/GSRTrendChart";
-import AccelerationChart from "@/app/dashboard/components/charts/AccelerationChart";
+import HealthStatusChart from "@/app/dashboard/components/Charts/HealthStatusChart";
+import TemperatureTrendChart from "@/app/dashboard/components/Charts/TemperatureTrendChart";
+import GSRTrendChart from "@/app/dashboard/components/Charts/GSRTrendChart";
+import AccelerationChart from "@/app/dashboard/components/Charts/AccelerationChart";
 
 interface ChartsGridProps {
   theme: Theme;

@@ -1,14 +1,15 @@
 "use client";
-
+ 
 import { useEffect, useRef } from "react";
 import GlobalStyles from "@/app/dashboard/components/layout/GlobalStyles";
 import AnimatedBackground from "@/app/dashboard/components/animations/AnimatedBackground";
-import Header from "@/app/dashboard/components/layout/Header";
+import  {DashboardHeader}  from "@/app/dashboard/components/layout/Dashboardheader";
+import Sidebar from "@/app/dashboard/components/Sidebar/sidebar";
 import MetricsGrid from "@/app/dashboard/components/metrics/MetricsGrid";
-import AIHealthInsight from "@/app/dashboard/components/analysis/AIHealthInsight";
-import ChartsGrid from "@/app/dashboard/components/charts/ChartsGrid";
+import AIInsightPanel from "@/app/dashboard/components/analysis/AIInsightPanel";
+import ChartsGrid from "@/app/dashboard/components/Charts/ChartsGrid";
 import Footer from "@/app/dashboard/components/layout/Footer";
-
+ 
 import { THEMES } from "@/domain/constants";
 import { useDashboardState } from "@/application/hooks/useDashboardState";
 import { useSignalRConnection } from "@/application/hooks/useSignalRConnection";
@@ -16,24 +17,24 @@ import { useAnalysisBuffer } from "@/application/hooks/useAnalysisBuffer";
 import { useHealthTracking } from "@/application/hooks/useHealthTracking";
 import { extractUserFromToken } from "@/application/use-cases/extractUserFromToken";
 import { generateSimulatedData } from "@/infrastructure/services/dataGeneratorService";
-
+ 
 export default function DashboardPage() {
-  // ── Core hooks ────────────────────────────────────────────────────────────
-  const dashboard = useDashboardState();
-  const { 
-    setUsername, 
-    dataMode, 
-    username, 
-    handleDataUpdate, 
-    sensorData, 
-    currentTheme, 
-    setCurrentTheme, 
-    setDataMode, 
-    timestamp, 
-    historicalData,
-    handleClearData: dashboardClearData 
-  } = dashboard;
 
+  const dashboard = useDashboardState();
+  const {
+    setUsername,
+    dataMode,
+    username,
+    handleDataUpdate,
+    sensorData,
+    currentTheme,
+    setCurrentTheme,
+    setDataMode,
+    timestamp,
+    historicalData,
+    handleClearData: dashboardClearData,
+  } = dashboard;
+ 
   const connection = useSignalRConnection({
     username: username,
     dataMode: dataMode,
@@ -43,51 +44,46 @@ export default function DashboardPage() {
       console.error("❌ SignalR Connection failed:", error),
   });
   const { disconnect, isConnected } = connection;
-
+ 
   const analysis = useAnalysisBuffer();
-  const { 
-    startCountdown, 
-    stopCountdown, 
-    addAnalysisData, 
-    counter, 
-    geminiResponse, 
-    isAnalyzing, 
-    analysisArrayLength 
+  const {
+    startCountdown,
+    stopCountdown,
+    addAnalysisData,
+    counter,
+    geminiResponse,
+    isAnalyzing,
+    analysisArrayLength,
   } = analysis;
-
-  // ── Derived state ───────────────────────────────────────────────────────────
+ 
+  // ── Derived state ──────────────────────────────────────────────────────
   const theme = THEMES[currentTheme];
   const healthTracking = useHealthTracking(sensorData);
-
-  // Simulation interval ref
+ 
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // ── Effect 1: Extract username on mount ─────────────────────────────────────
+ 
+  // ── Effect 1: Extract username on mount ────────────────────────────────
   useEffect(() => {
     const extractedUser = extractUserFromToken();
     setUsername(extractedUser);
   }, []);
-
-  // ── Effect 2: Mode-switch / startup effect ──────────────────────────────────
+ 
+  // ── Effect 2: Mode-switch / startup effect ─────────────────────────────
   useEffect(() => {
     const setupMode = async () => {
-      // Stop any previous simulation first
       if (simulationIntervalRef.current) {
         clearInterval(simulationIntervalRef.current);
         simulationIntervalRef.current = null;
       }
-
-      // Disconnect any previous live stream
+ 
       disconnect();
-
+ 
       const useSimulatedMode =
-        dataMode === "simulated" ||
-        (!username && dataMode !== "live");
-
+        dataMode === "simulated" || (!username && dataMode !== "live");
+ 
       if (useSimulatedMode) {
         console.log("🔄 Starting simulated data mode...");
         startCountdown();
-
         simulationIntervalRef.current = setInterval(() => {
           const data = generateSimulatedData();
           handleDataUpdate(data);
@@ -97,9 +93,9 @@ export default function DashboardPage() {
         startCountdown();
       }
     };
-
+ 
     setupMode();
-
+ 
     return () => {
       if (simulationIntervalRef.current) {
         clearInterval(simulationIntervalRef.current);
@@ -109,46 +105,61 @@ export default function DashboardPage() {
       disconnect();
     };
   }, [dataMode, username]);
-
-  // ── Effect 3: Wire sensor data → analysis buffer ─────────────────────────────
+ 
+  // ── Effect 3: Wire sensor data → analysis buffer ───────────────────────
   useEffect(() => {
     if (sensorData) {
       addAnalysisData(sensorData);
     }
   }, [sensorData]);
-
-  // ── Handlers ────────────────────────────────────────────────────────────────
+ 
+  // ── Handlers ───────────────────────────────────────────────────────────
   const handleClearData = () => {
-    dashboardClearData(
-      dataMode === "live" ? disconnect : undefined
-    );
+    dashboardClearData(dataMode === "live" ? disconnect : undefined);
   };
-
-  // ── Render ──────────────────────────────────────────────────────────────────
+ 
+  const handleToggleTheme = () => {
+    setCurrentTheme(currentTheme === "limeDark" ? "blueLight" : "limeDark");
+  };
+ 
+  // isConnected in the live-mode sense (for sidebar/header status display)
+  const isLiveConnected = dataMode === "live" && isConnected;
+ 
+  // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="relative" style={{ minHeight: "100vh", overflowX: "hidden" }}>
       <GlobalStyles theme={theme} />
-
       <AnimatedBackground theme={theme} />
-
+ 
+      {/* Fixed sidebar*/}
+      <Sidebar
+        isConnected={isLiveConnected}
+        dataMode={dataMode}
+        onDataModeChange={setDataMode}
+        onClearData={handleClearData}
+        systemHealth={healthTracking.overallHealthStatus}
+      />
+ 
       <div
         className="relative z-10"
         style={{ backgroundColor: theme.background.primary }}
       >
-        <Header
-          theme={theme}
-          username={username}
-          currentTheme={currentTheme}
-          setCurrentTheme={setCurrentTheme}
+        {/* Hero header  */}
+        <DashboardHeader
+          username={username || "Guest"}
+          overallStatus={healthTracking.overallHealthStatus}
+          isConnected={isLiveConnected}
           dataMode={dataMode}
-          setDataMode={setDataMode}
-          isConnected={isConnected}
-          overallHealthStatus={healthTracking.overallHealthStatus}
           timestamp={timestamp}
+          theme={theme}
+          currentTheme={currentTheme}
+          onThemeToggle={handleToggleTheme}
+          onDataModeChange={setDataMode}
           onClearData={handleClearData}
         />
-
+ 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-10 sm:py-12">
+          {/* Metric cards*/}
           <MetricsGrid
             theme={theme}
             sensorData={sensorData}
@@ -160,21 +171,20 @@ export default function DashboardPage() {
               gsrValue: healthTracking.gsrValue,
             }}
           />
-
-          <AIHealthInsight
-            theme={theme}
+ 
+          {/* AI Insight panel*/}
+          <AIInsightPanel
             counter={counter}
             geminiResponse={geminiResponse}
             isAnalyzing={isAnalyzing}
-            analysisArrayLength={analysisArrayLength}
-          />
-
-          <ChartsGrid
+            dataPointsCollected={analysisArrayLength}
             theme={theme}
-            historicalData={historicalData}
           />
+ 
+          {/* Charts*/}
+          <ChartsGrid theme={theme} historicalData={historicalData} />
         </main>
-
+ 
         <Footer theme={theme} />
       </div>
     </div>
