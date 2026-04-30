@@ -29,80 +29,132 @@ export function useSignalRConnection(
   options: UseSignalRConnectionOptions
 ): UseSignalRConnectionReturn {
 
-  const {
-    username,
-    dataMode,
-    onDataReceived,
-    onConnectionEstablished,
-    onConnectionFailed,
-    onReconnected,
-  } = options;
+  const { username, dataMode } = options;
 
   const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
 
+  const latestOptionsRef = useRef(options);
   const hubServiceRef = useRef(new SensorHubService());
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const isConnectingRef = useRef(false);
+  const connectionRunRef = useRef(0);
+
+  latestOptionsRef.current = options;
 
   const connect = useCallback(async () => {
-    if (dataMode === "simulated") {
-      setIsConnected(false);
+    const currentOptions = latestOptionsRef.current;
+
+    if (currentOptions.dataMode !== "live") {
       return;
     }
 
-    if (!username) {
+    if (!currentOptions.username) {
       const error = new Error("Username required for live mode");
       setLastError(error);
       setIsConnected(false);
-      onConnectionFailed?.(error);
+      currentOptions.onConnectionFailed?.(error);
       return;
     }
 
-    if (isConnecting || isConnected) {
+    const currentConnection = connectionRef.current;
+    if (
+      isConnectingRef.current ||
+      currentConnection?.state === signalR.HubConnectionState.Connected ||
+      currentConnection?.state === signalR.HubConnectionState.Connecting ||
+      currentConnection?.state === signalR.HubConnectionState.Reconnecting
+    ) {
       return;
     }
+
+    const runId = connectionRunRef.current + 1;
+    connectionRunRef.current = runId;
+    isConnectingRef.current = true;
+
+    let hub: signalR.HubConnection | null = null;
 
     try {
       setIsConnecting(true);
       setLastError(null);
 
-      const hub = await hubServiceRef.current.connectToHub(
-        username,
-        onDataReceived,
-        onReconnected || null
-      );
+      hub = hubServiceRef.current.createHubConnection(currentOptions.username, {
+        onReceiveUpdate: (data) => {
+          latestOptionsRef.current.onDataReceived(data);
+        },
+        onReconnecting: () => {
+          if (connectionRef.current !== hub) return;
+          isConnectingRef.current = true;
+          setIsConnected(false);
+          setIsConnecting(true);
+        },
+        onReconnected: () => {
+          if (connectionRef.current !== hub) return;
+          isConnectingRef.current = false;
+          setIsConnecting(false);
+          setIsConnected(true);
+          latestOptionsRef.current.onReconnected?.();
+        },
+        onClosed: (error) => {
+          if (connectionRef.current !== hub) return;
+          connectionRef.current = null;
+          isConnectingRef.current = false;
+          setConnection(null);
+          setIsConnecting(false);
+          setIsConnected(false);
+          if (error) {
+            setLastError(error);
+          }
+        },
+      });
 
+      connectionRef.current = hub;
       setConnection(hub);
+
+      await hubServiceRef.current.startHub(hub, currentOptions.username);
+
+      if (connectionRunRef.current !== runId || connectionRef.current !== hub) {
+        hubServiceRef.current.disconnectHub(hub);
+        return;
+      }
+
+      isConnectingRef.current = false;
+      setIsConnecting(false);
       setIsConnected(true);
-      onConnectionEstablished?.();
+      latestOptionsRef.current.onConnectionEstablished?.();
     } catch (error) {
       const err = error instanceof Error ? error : new Error("Connection failed");
-      setLastError(err);
-      setIsConnected(false);
-      onConnectionFailed?.(err);
+
+      if (connectionRunRef.current === runId && connectionRef.current === hub) {
+        connectionRef.current = null;
+        isConnectingRef.current = false;
+        setConnection(null);
+        setIsConnecting(false);
+        setIsConnected(false);
+        setLastError(err);
+        latestOptionsRef.current.onConnectionFailed?.(err);
+      }
+
       console.error("SignalR connection failed:", err);
-    } finally {
-      setIsConnecting(false);
     }
-  }, [
-    dataMode,
-    username,
-    onDataReceived,
-    onReconnected,
-    onConnectionEstablished,
-    onConnectionFailed,
-    isConnecting,
-    isConnected,
-  ]);
+  }, []);
 
   const disconnect = useCallback(() => {
-    if (connection) {
-      hubServiceRef.current.disconnectHub(connection);
-      setConnection(null);
-      setIsConnected(false);
+    connectionRunRef.current += 1;
+    isConnectingRef.current = false;
+
+    const hub = connectionRef.current;
+    connectionRef.current = null;
+
+    setConnection(null);
+    setIsConnecting(false);
+    setIsConnected(false);
+
+    if (hub) {
+      hubServiceRef.current.disconnectHub(hub);
     }
-  }, [connection]);
+  }, []);
 
   const manualCleanup = useCallback(() => {
     disconnect();

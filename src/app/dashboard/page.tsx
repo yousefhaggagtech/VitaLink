@@ -75,9 +75,7 @@ export default function DashboardPage() {
         clearInterval(simulationIntervalRef.current);
         simulationIntervalRef.current = null;
       }
- 
-      disconnect();
- 
+
       const useSimulatedMode =
         dataMode === "simulated" || (!username && dataMode !== "live");
  
@@ -102,7 +100,6 @@ export default function DashboardPage() {
         simulationIntervalRef.current = null;
       }
       stopCountdown();
-      disconnect();
     };
   }, [dataMode, username]);
  

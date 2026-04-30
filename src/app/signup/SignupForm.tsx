@@ -1,12 +1,12 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useAuth } from "@/app/features/auth/hooks/useAuth";
-import { User } from "@/domain/entities/User";
+// تأكد إن الـ Interface بتاع User اتحدث عشان يقبل الـ properties دي بس
+import { User } from "@/domain/entities/User"; 
 import Link from "next/link";
 import NavBar from "@/components/navbar";
 import { Listbox } from "@headlessui/react";
 import Footer from "@/components/ui/footer";
-import Webcam from "react-webcam"; 
 
 const COLORS = {
   lime: '#CCFF00',
@@ -22,70 +22,45 @@ const COLORS = {
   accentGlow: 'rgba(204, 255, 0, 0.08)',
 };
 
+// تعريف الأدوار المتاحة (يمكنك تعديل الأسماء حسب البيزنس لوجيك)
+const ROLES = [
+  { id: 0, name: "Regular User / Athlete" },
+  { id: 1, name: "Coach / Admin" }
+];
+
 export default function SignupForm() {
   const { signup, loading, error } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  // Webcam Ref
-  const webcamRef = useRef<Webcam>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
     password: "",
     confirmPassword: "",
-    birthDate: "",
-    bloodType: "",
-    targetSport: "",
-    weight: "",
-    fatPercentage: "",
+    role: 0, // القيمة الافتراضية بناءً على الـ Schema
   });
 
   const [formError, setFormError] = useState("");
 
-  const validBloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-  const sports = ["Running", "Football"];
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleListboxChange = (name: "bloodType" | "targetSport", value: string) => {
+  const handleListboxChange = (name: "role", value: number) => {
     setForm({ ...form, [name]: value });
-  };
-
-  const capturePhoto = () => {
-    if (webcamRef.current) {
-      const imageSrc = webcamRef.current.getScreenshot();
-      setCapturedImage(imageSrc);
-      setFormError("");
-    }
-  };
-
-  const retakePhoto = () => {
-    setCapturedImage(null);
   };
 
   const validateStep = () => {
     switch (currentStep) {
       case 1:
         if (!form.firstName.trim() || !form.lastName.trim()) return "Please enter your full name";
-        if (form.password.length < 6) return "Password must be at least 6 characters long";
-        if (form.password !== form.confirmPassword) return "Passwords do not match";
         break;
       case 2:
-        if (!form.birthDate) return "Please select your birth date";
-        if (!validBloodTypes.includes(form.bloodType)) return "Please select a valid blood type";
-        if (!form.targetSport) return "Please select your target sport";
-        break;
-      case 3:
-        if (!form.weight.trim() || isNaN(parseFloat(form.weight)) || parseFloat(form.weight) <= 0) return "Please enter a valid weight";
-        if (!form.fatPercentage.trim() || isNaN(parseFloat(form.fatPercentage)) || parseFloat(form.fatPercentage) < 0) return "Please enter a valid body fat percentage";
-        break;
-      case 4:
-        if (!capturedImage) return "Please capture a photo for identity verification";
+        if (form.password.length < 6) return "Password must be at least 6 characters long";
+        if (form.password !== form.confirmPassword) return "Passwords do not match";
+        if (form.role === null || form.role === undefined) return "Please select a role";
         break;
     }
     return "";
@@ -98,7 +73,7 @@ export default function SignupForm() {
       return;
     }
     setFormError("");
-    setCurrentStep((prev) => Math.min(prev + 1, 4));
+    setCurrentStep((prev) => Math.min(prev + 1, 2)); // تم التعديل لخطوتين فقط
   };
 
   const prevStep = () => {
@@ -117,19 +92,15 @@ export default function SignupForm() {
 
     setFormError("");
 
-   const formattedData: User = {
-  firstName: form.firstName.trim(),
-  lastName: form.lastName.trim(),
-  password: form.password,
-  birthDate: new Date(form.birthDate).toISOString(),
-  weight: parseFloat(form.weight),
-  bodyFatPercentage: parseFloat(form.fatPercentage),
-  bloodType: form.bloodType,
-  targetSport: form.targetSport,
-  profileImageBase64: capturedImage || undefined
-} as User; 
+    // الداتا اللي هتتبعت للـ API مطابقة للـ Schema بالضبط
+    const formattedData = {
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      password: form.password,
+      role: form.role,
+    }; 
 
-signup(formattedData);
+    signup(formattedData as any); // استخدم as any لو الـ interface لسه ماتحدثش، أو شيلها لو حدثته
   };
 
   return (
@@ -150,12 +121,11 @@ signup(formattedData);
               animation: 'float 8s ease-in-out infinite',
             }}
           ></div>
-          
         </div>
 
         <div className="flex w-full min-h-full relative z-10 items-center justify-center md:pt-10">
           
-          {/* Left Side Info (Optional - Can be hidden on small screens) */}
+          {/* Left Side Info */}
           <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12">
              <div>
                 <h1 className="text-5xl font-light leading-tight mb-6" style={{ color: COLORS.textPrimary }}>
@@ -164,10 +134,6 @@ signup(formattedData);
                 <p className="text-lg font-light max-w-lg" style={{ color: COLORS.textSecondary }}>
                   Create your VitaLink account and unlock the power of real-time biometric insights tailored to your unique performance profile.
                 </p>
-             </div>
-             {/* Feature Cards */}
-             <div className="space-y-4 pt-8">
-              
              </div>
           </div>
 
@@ -185,20 +151,20 @@ signup(formattedData);
                 {/* Form Header */}
                 <div className="text-center mb-8 relative z-10">
                   <h1 className="text-3xl font-light mb-2" style={{ color: COLORS.textPrimary }}>Create Account</h1>
-                  <p className="text-sm font-light" style={{ color: COLORS.textTertiary }}>Step {currentStep} of 4 — Complete your profile</p>
+                  <p className="text-sm font-light" style={{ color: COLORS.textTertiary }}>Step {currentStep} of 2 — Complete your profile</p>
                   
                   {/* Progress Bar */}
                   <div className="mt-4 h-1 w-full bg-gray-800 rounded-full overflow-hidden">
                     <div 
                         className="h-full transition-all duration-500 ease-out"
-                        style={{ width: `${(currentStep / 4) * 100}%`, backgroundColor: COLORS.lime }}
+                        style={{ width: `${(currentStep / 2) * 100}%`, backgroundColor: COLORS.lime }}
                     ></div>
                   </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
                   
-                  {/* Step 1: Basic Info */}
+                  {/* Step 1: Basic Info (Names) */}
                   {currentStep === 1 && (
                     <div className="space-y-4">
                       {/* First Name */}
@@ -225,6 +191,31 @@ signup(formattedData);
                           placeholder="Enter last name"
                         />
                       </div>
+                    </div>
+                  )}
+
+                  {/* Step 2: Security & Role */}
+                  {currentStep === 2 && (
+                    <div className="space-y-4">
+                      {/* Role Selection */}
+                      <div>
+                          <label className="text-xs uppercase font-semibold tracking-wider mb-1 block" style={{ color: COLORS.textSecondary }}>Account Role</label>
+                          <Listbox value={form.role} onChange={(val) => handleListboxChange("role", val)}>
+                              <div className="relative">
+                                  <Listbox.Button className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-gray-800 text-white text-left focus:border-[#CCFF00] outline-none">
+                                      {ROLES.find(r => r.id === form.role)?.name || "Select Role"}
+                                  </Listbox.Button>
+                                  <Listbox.Options className="absolute mt-1 w-full bg-[#141414] border border-gray-800 rounded-xl overflow-hidden z-20">
+                                      {ROLES.map((role) => (
+                                          <Listbox.Option key={role.id} value={role.id} className="px-4 py-2 hover:bg-[#CCFF00] hover:text-black cursor-pointer text-white transition-colors">
+                                              {role.name}
+                                          </Listbox.Option>
+                                      ))}
+                                  </Listbox.Options>
+                              </div>
+                          </Listbox>
+                      </div>
+
                       {/* Password */}
                       <div>
                         <label className="text-xs uppercase font-semibold tracking-wider mb-1 block" style={{ color: COLORS.textSecondary }}>Password</label>
@@ -243,152 +234,32 @@ signup(formattedData);
                             </button>
                         </div>
                       </div>
+                      
                       {/* Confirm Password */}
-                   <div>
-                     <label className="text-xs uppercase font-semibold tracking-wider mb-1 block" style={{ color: COLORS.textSecondary }}>
-                      Confirm Password
-                      </label>
-  
-
-                   <div className="relative"> 
-                  <input
-                  name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  suppressHydrationWarning={true}
-                 className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-gray-800 text-white focus:border-[#CCFF00] outline-none transition-colors"
-                  placeholder="Confirm password"
-                   />
-
-                 <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500 hover:text-white transition-colors"
-                style={{ color: form.confirmPassword ? COLORS.textSecondary : COLORS.textTertiary }}
-                  >
-                 {showConfirmPassword ? "HIDE" : "SHOW"}
-                </button>
-             </div>
-           </div>
-       </div>
-                  )}
-
-                  {/* Step 2: Details */}
-                  {currentStep === 2 && (
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-xs uppercase font-semibold tracking-wider mb-1 block" style={{ color: COLORS.textSecondary }}>Birth Date</label>
-                            <input
-                                type="date"
-                                name="birthDate"
-                                value={form.birthDate}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-gray-800 text-white focus:border-[#CCFF00] outline-none transition-colors"
-                            />
+                      <div>
+                        <label className="text-xs uppercase font-semibold tracking-wider mb-1 block" style={{ color: COLORS.textSecondary }}>
+                        Confirm Password
+                        </label>
+                        <div className="relative"> 
+                          <input
+                          name="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={form.confirmPassword}
+                          onChange={handleChange}
+                          suppressHydrationWarning={true}
+                          className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-gray-800 text-white focus:border-[#CCFF00] outline-none transition-colors"
+                          placeholder="Confirm password"
+                          />
+                          <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500 hover:text-white transition-colors"
+                          style={{ color: form.confirmPassword ? COLORS.textSecondary : COLORS.textTertiary }}
+                          >
+                          {showConfirmPassword ? "HIDE" : "SHOW"}
+                          </button>
                         </div>
-                        
-                        <div>
-                            <label className="text-xs uppercase font-semibold tracking-wider mb-1 block" style={{ color: COLORS.textSecondary }}>Blood Type</label>
-                            <Listbox value={form.bloodType} onChange={(val) => handleListboxChange("bloodType", val)}>
-                                <div className="relative">
-                                    <Listbox.Button className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-gray-800 text-white text-left focus:border-[#CCFF00] outline-none">
-                                        {form.bloodType || "Select Type"}
-                                    </Listbox.Button>
-                                    <Listbox.Options className="absolute mt-1 w-full bg-[#141414] border border-gray-800 rounded-xl overflow-hidden z-20">
-                                        {validBloodTypes.map((type) => (
-                                            <Listbox.Option key={type} value={type} className="px-4 py-2 hover:bg-[#CCFF00] hover:text-black cursor-pointer text-white transition-colors">
-                                                {type}
-                                            </Listbox.Option>
-                                        ))}
-                                    </Listbox.Options>
-                                </div>
-                            </Listbox>
-                        </div>
-
-                        <div>
-                            <label className="text-xs uppercase font-semibold tracking-wider mb-1 block" style={{ color: COLORS.textSecondary }}>Sport</label>
-                            <Listbox value={form.targetSport} onChange={(val) => handleListboxChange("targetSport", val)}>
-                                <div className="relative">
-                                    <Listbox.Button className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-gray-800 text-white text-left focus:border-[#CCFF00] outline-none">
-                                        {form.targetSport || "Select Sport"}
-                                    </Listbox.Button>
-                                    <Listbox.Options className="absolute mt-1 w-full bg-[#141414] border border-gray-800 rounded-xl overflow-hidden z-20">
-                                        {sports.map((sport) => (
-                                            <Listbox.Option key={sport} value={sport} className="px-4 py-2 hover:bg-[#CCFF00] hover:text-black cursor-pointer text-white transition-colors">
-                                                {sport}
-                                            </Listbox.Option>
-                                        ))}
-                                    </Listbox.Options>
-                                </div>
-                            </Listbox>
-                        </div>
-                    </div>
-                  )}
-
-                  {/* Step 3: Metrics */}
-                  {currentStep === 3 && (
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-xs uppercase font-semibold tracking-wider mb-1 block" style={{ color: COLORS.textSecondary }}>Weight (kg)</label>
-                            <input
-                                type="number"
-                                name="weight"
-                                value={form.weight}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-gray-800 text-white focus:border-[#CCFF00] outline-none transition-colors"
-                                placeholder="e.g. 75"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs uppercase font-semibold tracking-wider mb-1 block" style={{ color: COLORS.textSecondary }}>Body Fat (%)</label>
-                            <input
-                                type="number"
-                                name="fatPercentage"
-                                value={form.fatPercentage}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-gray-800 text-white focus:border-[#CCFF00] outline-none transition-colors"
-                                placeholder="e.g. 15"
-                            />
-                        </div>
-                    </div>
-                  )}
-
-                  {/* Step 4: Face Verification (New) */}
-                  {currentStep === 4 && (
-                    <div className="space-y-4 text-center">
-                        <h3 className="text-white text-lg font-light">Face Verification</h3>
-                        <p className="text-xs text-gray-400 mb-4">We need a photo to secure your account and enable face login.</p>
-                        
-                        <div className="relative rounded-2xl overflow-hidden border border-gray-800 mx-auto aspect-video bg-black max-h-64">
-                            {!capturedImage ? (
-                                <>
-                                    <Webcam
-                                        audio={false}
-                                        ref={webcamRef}
-                                        screenshotFormat="image/jpeg"
-                                        className="w-full h-full object-cover"
-                                        videoConstraints={{ facingMode: "user" }}
-                                    />
-                                    <div className="absolute inset-0 border-2 border-dashed rounded-full w-40 h-56 m-auto opacity-50 animate-pulse" style={{ borderColor: COLORS.lime }}></div>
-                                </>
-                            ) : (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={capturedImage} alt="Captured" className="w-full h-full object-cover" />
-                            )}
-                        </div>
-
-                        <div className="flex justify-center gap-4 mt-4">
-                            {!capturedImage ? (
-                                <button type="button" onClick={capturePhoto} className="px-6 py-2 rounded-full bg-white text-black font-bold hover:bg-gray-200 transition">
-                                    Capture Photo
-                                </button>
-                            ) : (
-                                <button type="button" onClick={retakePhoto} className="px-6 py-2 rounded-full border border-gray-600 text-white hover:border-white transition">
-                                    Retake
-                                </button>
-                            )}
-                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -404,7 +275,7 @@ signup(formattedData);
                       </button>
                     )}
                     
-                    {currentStep < 4 ? (
+                    {currentStep < 2 ? (
                       <button
                         type="button"
                         onClick={nextStep}
@@ -416,7 +287,7 @@ signup(formattedData);
                     ) : (
                       <button
                         type="submit"
-                        disabled={loading || !capturedImage}
+                        disabled={loading}
                         className="flex-1 py-3 rounded-xl font-bold text-black transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ backgroundColor: COLORS.lime }}
                       >
