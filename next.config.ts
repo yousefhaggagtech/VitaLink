@@ -9,8 +9,7 @@ const nextConfig: NextConfig = {
     assetPrefix: '/VitaLink', 
   }),
   
-  // Enable static export for GitHub Pages deployment
-  output: 'export',
+  
   
   // Disable image optimization for static export (required for output: export)
   images: {

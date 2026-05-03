@@ -1,8 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useAuth } from "@/app/features/auth/hooks/useAuth";
-// تأكد إن الـ Interface بتاع User اتحدث عشان يقبل الـ properties دي بس
-import { User } from "@/domain/entities/User"; 
 import Link from "next/link";
 import NavBar from "@/components/navbar";
 import { Listbox } from "@headlessui/react";
@@ -22,11 +20,12 @@ const COLORS = {
   accentGlow: 'rgba(204, 255, 0, 0.08)',
 };
 
-// تعريف الأدوار المتاحة (يمكنك تعديل الأسماء حسب البيزنس لوجيك)
+
 const ROLES = [
-  { id: 0, name: "Regular User / Athlete" },
-  { id: 1, name: "Coach / Admin" }
+  { id: 0, name: "Coach" },
+  { id: 1, name: "Performance Analyst" },
 ];
+ 
 
 export default function SignupForm() {
   const { signup, loading, error } = useAuth();
