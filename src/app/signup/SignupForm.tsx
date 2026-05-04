@@ -5,7 +5,7 @@ import Link from "next/link";
 import NavBar from "@/components/navbar";
 import { Listbox } from "@headlessui/react";
 import Footer from "@/components/ui/footer";
-
+import { SignupData } from "@/domain/entities/SignUpData";
 const COLORS = {
   lime: '#CCFF00',
   darkBg: '#0A0A0A',
@@ -99,7 +99,7 @@ export default function SignupForm() {
       role: form.role,
     }; 
 
-    signup(formattedData as any); // استخدم as any لو الـ interface لسه ماتحدثش، أو شيلها لو حدثته
+    signup(formattedData as SignupData); // استخدم as any لو الـ interface لسه ماتحدثش، أو شيلها لو حدثته
   };
 
   return (

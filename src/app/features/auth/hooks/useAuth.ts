@@ -3,8 +3,8 @@ import { useState } from "react";
 import Cookies from "js-cookie";
 import axios, { AxiosError } from "axios";
 import axiosInstance from "@/lib/axiosInstance";
-import { User } from '@/domain/entities/User';
 import { useRouter } from "next/navigation";
+import { SignupData } from "@/domain/entities/SignUpData";
 
 // ─── Role Constants ────────────────────────────────────────────────────────────
 export const ROLES = {
@@ -91,7 +91,7 @@ export function useAuth() {
   };
 
   // ── Signup ─────────────────────────────────────────────────────────────────
-  const signup = async (data: User) => {
+  const signup = async (data: SignupData) => {
     setLoading(true);
     setError(null);
     try {

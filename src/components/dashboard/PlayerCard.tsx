@@ -152,7 +152,6 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
           </div>
           <LiveSparkline
             data={player.hrHistory}
-            liveValue={player.heartRate}
             color={colors.athleteCard.red}
             width={80} height={30} strokeWidth={1.8}
           />
