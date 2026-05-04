@@ -54,7 +54,7 @@ const MOCK_PLAYERS: Player[] = [
     fatigue: 15, stress: 8,
   },
 ];
-
+export const dynamic = 'force-dynamic';
 export default function CoachDashboardPage() {
   
   const params = useParams();
