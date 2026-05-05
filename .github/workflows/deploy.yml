@@ -21,5 +21,9 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Deploy to Vercel
-      
-        run: vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes ./main-front-main
+        run: |
+          if [ -d "main-front-main" ]; then
+            vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes ./main-front-main
+          else
+            vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes .
+          fi
