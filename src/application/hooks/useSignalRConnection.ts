@@ -79,6 +79,9 @@ export function useSignalRConnection(
       setIsConnecting(true);
       setLastError(null);
 
+      
+      console.log("ENV:", process.env.NEXT_PUBLIC_SIGNALR_HUB_URL);
+
       hub = hubServiceRef.current.createHubConnection(currentOptions.username, {
         onReceiveUpdate: (data) => {
           latestOptionsRef.current.onDataReceived(data);
