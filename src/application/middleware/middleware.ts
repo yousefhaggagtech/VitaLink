@@ -26,6 +26,9 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const { pathname } = request.nextUrl;
 
+    if (pathname.startsWith('/dashboard')) {
+    return NextResponse.next();
+  }
   // ── Not logged in → redirect to login ──────────────────────────────────────
   if (!token) {
     return NextResponse.redirect(new URL('/login', request.url));
