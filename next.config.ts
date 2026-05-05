@@ -4,13 +4,6 @@ const nextConfig: NextConfig = {
   // Enable React strict mode for better development experience
   reactStrictMode: true,
   
- ...(process.env.NODE_ENV === 'production' && {
-    basePath: '/VitaLink',
-    assetPrefix: '/VitaLink', 
-  }),
-  
-  
-  
   // Disable image optimization for static export (required for output: export)
   images: {
     unoptimized: true,
