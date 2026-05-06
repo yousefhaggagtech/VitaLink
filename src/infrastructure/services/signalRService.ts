@@ -85,7 +85,7 @@ export class SensorHubService implements ISensorHubService {
   }
 
   private getValidatedHubUrl(): string {
-    const url = requireClientEnv("signalRHubUrl");
+    const url = "https://vitalink20251014200825.azurewebsites.net/sensorhub"
 
     try {
       new URL(url);
