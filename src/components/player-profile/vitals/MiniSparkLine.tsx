@@ -4,17 +4,18 @@ import React, { useMemo } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MiniSparklineProps {
-  data:        number[];
-  color?:      string;
-  width?:      number;
-  height?:     number;
+  data:         number[];
+  color?:       string;
+  height?:      number;   // ← only height is configurable now
   strokeWidth?: number;
 }
+
+// ─── Internal width constant for path calculations ────────────────────────────
+const INTERNAL_W = 100;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function buildPath(
   data: number[],
-  w: number,
   h: number,
 ): { line: string; fill: string } {
   if (data.length < 2) return { line: '', fill: '' };
@@ -25,11 +26,10 @@ function buildPath(
   const pad   = 2;
 
   const coords: [number, number][] = data.map((v, i) => [
-    +((i / (data.length - 1)) * w).toFixed(1),
+    +((i / (data.length - 1)) * INTERNAL_W).toFixed(1),
     +(h - pad - ((v - min) / range) * (h - pad * 2)).toFixed(1),
   ]);
 
-  // Smooth bezier line
   const line = coords.reduce((acc, [x, y], i) => {
     if (i === 0) return `M ${x} ${y}`;
     const [px, py] = coords[i - 1];
@@ -37,8 +37,8 @@ function buildPath(
     return `${acc} C ${cpx} ${py}, ${cpx} ${y}, ${x} ${y}`;
   }, '');
 
-  const [lx, ly] = coords[coords.length - 1];
-  const [fx]     = coords[0];
+  const [lx] = coords[coords.length - 1];
+  const [fx] = coords[0];
   const fill = `${line} L ${lx} ${h} L ${fx} ${h} Z`;
 
   return { line, fill };
@@ -48,40 +48,39 @@ function buildPath(
 export const MiniSparkline: React.FC<MiniSparklineProps> = ({
   data,
   color       = '#D4607A',
-  width       = 100,
   height      = 36,
   strokeWidth = 1.6,
 }) => {
   const { line, fill } = useMemo(
-    () => buildPath(data, width, height),
-    [data, width, height],
+    () => buildPath(data, height),
+    [data, height],
   );
 
-  // Unique IDs to avoid SVG defs collision across multiple instances
   const uid = useMemo(
     () => `sp-${Math.random().toString(36).slice(2, 7)}`,
     [],
   );
 
-  // Live dot — last point
   const lastPt = useMemo(() => {
     if (data.length < 2) return null;
     const min   = Math.min(...data);
     const max   = Math.max(...data);
     const range = max - min || 1;
     const pad   = 2;
-    const x = width;
+    const x = INTERNAL_W;
     const y = height - pad - ((data[data.length - 1] - min) / range) * (height - pad * 2);
     return { x: +x.toFixed(1), y: +y.toFixed(1) };
-  }, [data, width, height]);
+  }, [data, height]);
 
   if (!line) return null;
 
   return (
     <svg
-      width={width}
+      // ── width is always 100% — fills parent container ──
+      width="100%"
       height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      viewBox={`0 0 ${INTERNAL_W} ${height}`}
+      preserveAspectRatio="none"
       style={{ overflow: 'visible', display: 'block' }}
       aria-hidden
     >
@@ -91,15 +90,15 @@ export const MiniSparkline: React.FC<MiniSparklineProps> = ({
           <stop offset="100%" stopColor={color} stopOpacity="0"    />
         </linearGradient>
         <linearGradient id={`${uid}-line`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor={color} stopOpacity="0.55" />
-          <stop offset="48%" stopColor={color} stopOpacity="1" />
+          <stop offset="0%"   stopColor={color} stopOpacity="0.55" />
+          <stop offset="48%"  stopColor={color} stopOpacity="1"    />
           <stop offset="100%" stopColor="#F8FAFC" stopOpacity="0.78" />
         </linearGradient>
         <filter id={`${uid}-soft`} x="-20%" y="-70%" width="140%" height="240%">
           <feGaussianBlur stdDeviation="1.1" />
         </filter>
         <clipPath id={`${uid}-c`}>
-          <rect x="0" y="0" width={width} height={height} />
+          <rect x="0" y="0" width={INTERNAL_W} height={height} />
         </clipPath>
       </defs>
 
@@ -107,7 +106,7 @@ export const MiniSparkline: React.FC<MiniSparklineProps> = ({
         {/* Area fill */}
         <path d={fill} fill={`url(#${uid}-g)`} />
 
-        {/* Line */}
+        {/* Glow blur layer */}
         <path
           d={line}
           fill="none"
@@ -118,6 +117,8 @@ export const MiniSparkline: React.FC<MiniSparklineProps> = ({
           opacity="0.16"
           filter={`url(#${uid}-soft)`}
         />
+
+        {/* Main line */}
         <path
           d={line}
           fill="none"
