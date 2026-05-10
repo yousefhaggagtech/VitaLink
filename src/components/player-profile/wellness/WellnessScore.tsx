@@ -171,24 +171,24 @@ export const WellnessScore: React.FC<WellnessScoreProps> = ({
           padding: 9px;
           border-radius: 13px;
           background:
-            linear-gradient(180deg, rgba(182,255,46,0.12), rgba(182,255,46,0.045)),
+            linear-gradient(180deg, rgba(204,255,0,0.12), rgba(204,255,0,0.045)),
             rgba(11,18,32,0.68);
-          border: 0.5px solid rgba(182,255,46,0.22);
-          color: var(--vl-lime);
+          border: 0.5px solid rgba(204,255,0,0.22);
+          color: #CCFF00;
           font-family: 'DM Sans', sans-serif;
           font-size: 11px;
           font-weight: 700;
           letter-spacing: .08em;
           cursor: pointer;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 10px 28px rgba(0,0,0,0.18);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 10px 28px rgba(0,0,0,0.18), 0 0 12px rgba(204,255,0,0.05);
           transition: background .18s, border-color .18s, box-shadow .18s, transform .18s;
         }
         .vl-ws__btn:hover {
           background:
-            linear-gradient(180deg, rgba(182,255,46,0.15), rgba(182,255,46,0.06)),
+            linear-gradient(180deg, rgba(204,255,0,0.15), rgba(204,255,0,0.06)),
             rgba(11,18,32,0.78);
-          border-color: rgba(182,255,46,0.32);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.11), 0 14px 32px rgba(0,0,0,0.24), 0 0 18px rgba(182,255,46,0.07);
+          border-color: rgba(204,255,0,0.32);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.11), 0 14px 32px rgba(0,0,0,0.24), 0 0 18px rgba(204,255,0,0.1);
           transform: translateY(-1px);
         }
       `}</style>

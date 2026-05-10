@@ -61,10 +61,10 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
       <div className="vl-sb__logo">
         <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
           <polyline points="1,14 5,6 9,16 13,4 17,12 21,8"
-            stroke="#B6FF2E" strokeWidth="2.2"
+            stroke="#CCFF00" strokeWidth="2.2"
             strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-        <span className="vl-sb__logo-text">PERFORM</span>
+        <span className="vl-sb__logo-text">VitaLink</span>
       </div>
 
       {/* Primary nav */}
