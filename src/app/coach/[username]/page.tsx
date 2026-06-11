@@ -3,64 +3,20 @@
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { colors } from '@/styles/tokens/colors';
-import { Player } from '@/domain/entities/player';
 import { Navbar } from '@/components/dashboard/Navbar';
 import { AlertBanner } from '@/components/dashboard/AlertBanner';
 import { StatsRow } from '@/components/dashboard/StatsRow';
 import { PlayerCard } from '@/components/dashboard/PlayerCard';
 import { AddPlayerModal } from '@/components/dashboard/AddPlayerModal';
+import { useCoachPlayers } from '@/application/hooks/useCoachPlayers';
 
-const MOCK_PLAYERS: Player[] = [
-  {
-    id: 'ath-1', name: 'Ahmed Hassan', initials: 'AH', position: 'Midfielder', jerseyNumber: 10,
-    age: 24, weight: 72, beltId: 'band-123', status: 'fit',
-    heartRate: 142, spO2: 98, temperature: 37.1,
-    hrHistory: [128, 135, 140, 138, 142, 139, 144, 142, 141, 143, 142, 145, 142, 140, 142, 141, 143, 142, 141, 142],
-    fatigue: 32, stress: 18, imageUrl: '/salah.jpg',
-  },
-  {
-    id: 'ath-2', name: 'Omar Khaled', initials: 'OK', position: 'Forward', jerseyNumber: 9,
-    age: 26, weight: 78, beltId: 'band-456', status: 'moderate',
-    heartRate: 168, spO2: 50, temperature: 37.6,
-    hrHistory: [145, 150, 155, 158, 162, 165, 162, 166, 168, 167, 168, 170, 168, 165, 168, 167, 169, 168, 167, 168],
-    fatigue: 61, stress: 45, imageUrl: '/messi.jpg',
-  },
-  {
-    id: 'ath-3', name: 'Mohamed Salah', initials: 'MS', position: 'Forward', jerseyNumber: 11,
-    age: 28, weight: 71, beltId: 'band-111', status: 'critical',
-    heartRate: 191, spO2: 30, temperature: 38.2,
-    hrHistory: [160, 168, 172, 178, 182, 185, 186, 188, 190, 189, 191, 192, 191, 190, 191, 192, 193, 191, 190, 191],
-    fatigue: 89, stress: 72,
-  },
-  {
-    id: 'ath-4', name: 'Karim Nasser', initials: 'KN', position: 'Defender', jerseyNumber: 5,
-    age: 25, weight: 80, beltId: 'band-222', status: 'fit',
-    heartRate: 138, spO2: 99, temperature: 37.0,
-    hrHistory: [120, 125, 130, 132, 135, 138, 136, 138, 137, 139, 138, 140, 138, 136, 138, 137, 139, 138, 137, 138],
-    fatigue: 28, stress: 12,
-  },
-  {
-    id: 'ath-5', name: 'Youssef Ali', initials: 'YA', position: 'Defender', jerseyNumber: 3,
-    age: 23, weight: 76, beltId: null, status: 'fit',
-    heartRate: 155, spO2: 97, temperature: 37.3,
-    hrHistory: [140, 144, 148, 150, 153, 155, 154, 156, 155, 157, 155, 158, 155, 153, 155, 154, 156, 155, 154, 155],
-    fatigue: 48, stress: 33,
-  },
-  {
-    id: 'ath-6', name: 'Tamer Samir', initials: 'TS', position: 'Goalkeeper', jerseyNumber: 1,
-    age: 30, weight: 85, beltId: 'band-333', status: 'fit',
-    heartRate: 110, spO2: 99, temperature: 36.8,
-    hrHistory: [98, 102, 106, 108, 110, 109, 111, 110, 109, 111, 110, 112, 110, 108, 110, 109, 111, 110, 109, 110],
-    fatigue: 15, stress: 8,
-  },
-];
 export const dynamic = 'force-dynamic';
+
 export default function CoachDashboardPage() {
-  
   const params = useParams();
   const coachName = decodeURIComponent((params?.username as string) ?? 'Coach');
 
-  const [players, setPlayers] = useState<Player[]>(MOCK_PLAYERS);
+  const { players, loading, error, refetch } = useCoachPlayers();
   const [showModal, setShowModal] = useState(false);
   const criticalPlayers = players.filter(p => p.status === 'critical');
 
@@ -79,6 +35,9 @@ export default function CoachDashboardPage() {
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
         select option { background: #0F1218; color: ${colors.text}; }
         input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.45); }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
       `}</style>
 
       <div style={{
@@ -101,59 +60,107 @@ export default function CoachDashboardPage() {
 
           <StatsRow players={players} />
 
-          <div style={{
-            display: 'flex', alignItems: 'flex-end',
-            justifyContent: 'space-between', marginBottom: '18px',
-          }}>
-            <div>
-              <h2 style={{
-                margin: 0, fontSize: '18px', fontWeight: 600,
-                color: colors.text,
-                fontFamily: "'Barlow Condensed', sans-serif",
-                letterSpacing: '.03em',
-              }}>
-                Squad Overview
-              </h2>
-              <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.textMuted }}>
-                Real-time biometric monitoring — {players.length} players active
-              </p>
+          {/* Loading State */}
+          {loading && (
+            <div style={{
+              textAlign: 'center',
+              padding: '40px 20px',
+              color: colors.textMuted,
+            }}>
+              <div style={{
+                display: 'inline-block',
+                width: '40px',
+                height: '40px',
+                border: `2px solid ${colors.border}`,
+                borderTop: `2px solid ${colors.lime}`,
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+              }} />
+              <p style={{ marginTop: '12px', fontSize: '13px' }}>Loading players...</p>
             </div>
+          )}
 
-            <button
-              onClick={() => setShowModal(true)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: 'rgba(204,255,0,0.08)',
-                border: '0.5px solid rgba(204,255,0,0.25)',
-                color: '#CCFF00',
-                fontSize: '11px', fontWeight: 700,
-                padding: '8px 16px', borderRadius: '9px',
-                cursor: 'pointer', letterSpacing: '.05em',
-                transition: 'background .18s, border-color .18s',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(204,255,0,0.14)';
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(204,255,0,0.40)';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(204,255,0,0.08)';
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(204,255,0,0.25)';
-              }}
-            >
-              <span style={{ fontSize: '14px', lineHeight: 1 }}>+</span>
-              Add Player
-            </button>
-          </div>
+          {/* Error State */}
+          {error && !loading && (
+            <div style={{
+              background: colors.criticalBg,
+              border: `1px solid ${colors.criticalBorder}`,
+              borderRadius: '9px',
+              padding: '16px',
+              marginBottom: '18px',
+              color: colors.critical,
+              fontSize: '13px',
+            }}>
+              <p style={{ margin: '0 0 8px' }}>Failed to load players</p>
+              <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>{error}</p>
+            </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 w-full">
-            {players.map(player => (
-              <PlayerCard
-                key={player.id}
-                player={player}
-                onDelete={() => setPlayers(prev => prev.filter(p => p.id !== player.id))}
-              />
-            ))}
-          </div>
+          {/* Content Section Header */}
+          {!loading && (
+            <div style={{
+              display: 'flex', alignItems: 'flex-end',
+              justifyContent: 'space-between', marginBottom: '18px',
+            }}>
+              <div>
+                <h2 style={{
+                  margin: 0, fontSize: '18px', fontWeight: 600,
+                  color: colors.text,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  letterSpacing: '.03em',
+                }}>
+                  Squad Overview
+                </h2>
+                <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.textMuted }}>
+                  Real-time biometric monitoring — {players.length} players active
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowModal(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: 'rgba(204,255,0,0.08)',
+                  border: '0.5px solid rgba(204,255,0,0.25)',
+                  color: '#CCFF00',
+                  fontSize: '11px', fontWeight: 700,
+                  padding: '8px 16px', borderRadius: '9px',
+                  cursor: 'pointer', letterSpacing: '.05em',
+                  transition: 'background .18s, border-color .18s',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(204,255,0,0.14)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(204,255,0,0.40)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(204,255,0,0.08)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(204,255,0,0.25)';
+                }}
+              >
+                <span style={{ fontSize: '14px', lineHeight: 1 }}>+</span>
+                Add Player
+              </button>
+            </div>
+          )}
+
+          {/* Players Grid */}
+          {!loading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 w-full">
+              {players.length === 0 ? (
+                <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: colors.textMuted, padding: '40px 20px' }}>
+                  No players yet. Click "Add Player" to get started.
+                </p>
+              ) : (
+                players.map(player => (
+                  <PlayerCard
+                    key={player.id}
+                    player={player}
+                    onDelete={() => refetch()}
+                  />
+                ))
+              )}
+            </div>
+          )}
 
         </main>
       </div>
@@ -162,7 +169,10 @@ export default function CoachDashboardPage() {
         <AddPlayerModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
-          onSuccess={() => console.log('Player added — TODO: refetch')}
+          onSuccess={() => {
+            refetch();
+            setShowModal(false);
+          }}
         />
       )}
     </>

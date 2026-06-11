@@ -12,9 +12,21 @@ const decodeToken = (token: string): { role: number; name: string } | null => {
   try {
     const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
     const payload = JSON.parse(atob(base64));
+    
+    // Handle both .NET claim format and standard claims
+    const role = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
+      ?? payload["role"];
+    
+    const name = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"]
+      ?? payload["name"];
+    
+    if (role === undefined || name === undefined) {
+      return null;
+    }
+    
     return {
-      role: Number(payload.role),
-      name: payload.name,
+      role: Number(role),
+      name: String(name),
     };
   } catch {
     return null;

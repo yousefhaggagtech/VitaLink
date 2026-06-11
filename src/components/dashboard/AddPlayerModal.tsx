@@ -1,9 +1,7 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { colors, radius } from '@/styles/tokens/colors';
-import axiosInstance from '@/lib/axiosInstance';
-
-interface Belt { DeviceID: string; }
+import { useAddPlayer } from '@/application/hooks/useAddPlayer';
 
 interface AddPlayerForm {
   firstName:          string;
@@ -38,24 +36,16 @@ const inputStyle: React.CSSProperties = {
 };
 
 export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [form, setForm]         = useState<AddPlayerForm>({
+  const [form, setForm] = useState<AddPlayerForm>({
     firstName: '', lastName: '', beltId: '', birthDate: '',
     weight: '', bloodType: '', bodyFatPercentage: '', profileImage: null,
   });
-  const [belts, setBelts]       = useState<Belt[]>([]);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState<string | null>(null);
-
-  // Fetch available belts when modal opens
-  useEffect(() => {
-    if (!isOpen) return;
-    axiosInstance.get('/api/devices/available')
-      .then(res => setBelts(res.data))
-      .catch(() => setBelts([]));
-  }, [isOpen]);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const { submit, error: hookError, submitting } = useAddPlayer();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setLocalError(null);
   };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,31 +54,26 @@ export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose,
 
   const handleSubmit = async () => {
     if (!form.firstName || !form.lastName) {
-      setError('First and last name are required.');
+      setLocalError('First and last name are required.');
       return;
     }
-    setLoading(true);
-    setError(null);
-    try {
-      const body = new FormData();
-      body.append('firstName',         form.firstName);
-      body.append('lastName',          form.lastName);
-      if (form.beltId)             body.append('beltId',            form.beltId);
-      if (form.birthDate)          body.append('birthDate',         form.birthDate);
-      if (form.weight)             body.append('weight',            form.weight);
-      if (form.bloodType)          body.append('bloodType',         form.bloodType);
-      if (form.bodyFatPercentage)  body.append('bodyFatPercentage', form.bodyFatPercentage);
-      if (form.profileImage)       body.append('profileImage',      form.profileImage);
-
-      await axiosInstance.post('/api/athletes', body, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+    setLocalError(null);
+    const success = await submit({
+      name: `${form.firstName} ${form.lastName}`,
+      beltID: form.beltId,
+      birthDate: form.birthDate,
+      weight: form.weight,
+      bloodType: form.bloodType,
+      bodyFatPercentage: form.bodyFatPercentage,
+      profileImage: form.profileImage,
+    });
+    if (success) {
       onSuccess();
       onClose();
-    } catch {
-      setError('Failed to add player. Please try again.');
-    } finally {
-      setLoading(false);
+      setForm({
+        firstName: '', lastName: '', beltId: '', birthDate: '',
+        weight: '', bloodType: '', bodyFatPercentage: '', profileImage: null,
+      });
     }
   };
 
@@ -180,24 +165,22 @@ export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose,
             ))}
           </div>
 
-          {/* Belt dropdown */}
+          {/* Belt ID input */}
           <div>
             <label style={{ display: 'block', fontSize: '10px', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: '5px' }}>
-              Assign Belt <span style={{ color: colors.textMuted }}>(optional)</span>
+              Belt ID *
             </label>
-            <select
+            <input
+              type="text"
               name="beltId"
               value={form.beltId}
               onChange={handleChange}
-              style={{ ...inputStyle, cursor: 'pointer' }}
-            >
-              <option value="">No belt — assign later</option>
-              {belts.map(b => (
-                <option key={b.DeviceID} value={b.DeviceID}>
-                  {b.DeviceID}
-                </option>
-              ))}
-            </select>
+              placeholder="e.g., BELT_A001"
+              required
+              style={inputStyle}
+              onFocus={e => e.currentTarget.style.borderColor = colors.limeBorder}
+              onBlur={e => e.currentTarget.style.borderColor = colors.border}
+            />
           </div>
 
           {/* Profile image */}
@@ -282,8 +265,8 @@ export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose,
             </div>
           </div>
 
-          {/* Error */}
-          {error && (
+          {/* Error Display */}
+          {(localError || hookError) && (
             <div style={{
               background:   colors.criticalBg,
               border:       `1px solid ${colors.criticalBorder}`,
@@ -292,30 +275,30 @@ export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose,
               fontSize:     '12px',
               color:        colors.critical,
             }}>
-              {error}
+              {localError || hookError}
             </div>
           )}
 
-          {/* Submit */}
+          {/* Submit Button */}
           <button
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={submitting}
             style={{
               width:         '100%',
-              background:    loading ? `${colors.lime}80` : colors.lime,
+              background:    submitting ? `${colors.lime}80` : colors.lime,
               border:        'none',
               color:         '#000',
               fontSize:      '13px',
               fontWeight:    '700',
               padding:       '11px',
               borderRadius:  radius.md,
-              cursor:        loading ? 'not-allowed' : 'pointer',
+              cursor:        submitting ? 'not-allowed' : 'pointer',
               letterSpacing: '.05em',
               marginTop:     '4px',
               transition:    'background .2s',
             }}
           >
-            {loading ? 'Adding Player...' : '+ Add Player to Squad'}
+            {submitting ? 'Adding Player...' : '+ Add Player to Squad'}
           </button>
         </div>
       </div>

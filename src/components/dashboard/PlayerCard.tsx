@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { Activity, Brain, Zap } from 'lucide-react';
 import { Player } from '@/domain/entities/player';
 import { colors, font, radius, statusConfig } from '@/styles/tokens/colors';
@@ -10,6 +11,7 @@ import { SegmentedBar }   from '@/components/ui/SegmentedBar';
 import { LiveSparkline }  from '@/components/ui/LiveSparkLine';
 import { HeartBeat }      from '@/components/ui/HeartBeat';
 import { HydrationDrop }  from '@/components/ui/HydrationDrop';
+import { usePlayerCardRealtime } from '@/application/hooks/usePlayerCardRealtime';
 
 interface PlayerCardProps {
   player:    Player;
@@ -64,12 +66,22 @@ const LoadRow: React.FC<{
 );
 
 export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
+  const router = useRouter();
+  const params = useParams();
+  const coachName = decodeURIComponent((params?.username as string) ?? '');
+
+  // Initialize realtime connection for live vitals
+  const { livePlayer } = usePlayerCardRealtime({
+    player,
+    beltId: player.beltId,
+  });
+
   const cfg        = statusConfig[player.status];
   const isCritical = player.status === 'critical';
 
-  const fatigueColor = player.fatigue > 80 ? colors.fatigueHigh
-    : player.fatigue > 55 ? colors.fatigueMed : colors.athleteCard.green;
-  const stressColor  = player.stress > 75 ? colors.stressHigh : colors.athleteCard.blue;
+  const fatigueColor = livePlayer.fatigue > 80 ? colors.fatigueHigh
+    : livePlayer.fatigue > 55 ? colors.fatigueMed : colors.athleteCard.green;
+  const stressColor  = livePlayer.stress > 75 ? colors.stressHigh : colors.athleteCard.blue;
 
   const vars: CardVars = {
     '--accent':      cfg.color,
@@ -97,7 +109,11 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
   return (
     <div
       className={`vl2-card${isCritical ? ' is-critical' : ''}`}
-      onClick={() => onClick?.(player)}
+      onClick={() => {
+        // Navigate to player profile with beltId as query param
+        const targetUrl = `/coach/${coachName}/player/${encodeURIComponent(player.name)}?beltId=${encodeURIComponent(player.beltId ?? '')}`;
+        router.push(targetUrl);
+      }}
       onPointerMove={onMove} onPointerLeave={onLeave}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -138,20 +154,20 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
         {/* Heart Rate */}
         <article className="vl2-panel vl2-panel--hr">
           <div className="vl2-orb vl2-orb--red">
-            <HeartBeat bpm={player.heartRate} size={24} color={colors.athleteCard.red}/>
+            <HeartBeat bpm={livePlayer.heartRate} size={24} color={colors.athleteCard.red}/>
           </div>
           <div className="vl2-stat-copy">
             <span className="vl2-stat-label">Heart Rate</span>
             <div className="vl2-stat-value">
-              <strong style={{ color: colors.athleteCard.red }}>{player.heartRate}</strong>
+              <strong style={{ color: colors.athleteCard.red }}>{livePlayer.heartRate}</strong>
               <em>BPM</em>
             </div>
             <span className="vl2-insight-tag" style={{ color: colors.athleteCard.red }}>
-              {hrLabel(player.heartRate)}
+              {hrLabel(livePlayer.heartRate)}
             </span>
           </div>
           <LiveSparkline
-            data={player.hrHistory}
+            data={livePlayer.hrHistory}
             color={colors.athleteCard.red}
             width={80} height={30} strokeWidth={1.8}
           />
@@ -160,22 +176,22 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
         {/* SpO2 */}
         <article className="vl2-panel vl2-panel--spo2">
           <div className="vl2-orb vl2-orb--cyan">
-            <HydrationDrop value={player.spO2} size={22} color={colors.athleteCard.cyan}/>
+            <HydrationDrop value={livePlayer.spO2} size={22} color={colors.athleteCard.cyan}/>
           </div>
           <div className="vl2-stat-copy">
             <span className="vl2-stat-label">SpO2</span>
             <div className="vl2-stat-value">
-              <strong style={{ color: colors.athleteCard.cyan }}>{player.spO2}</strong>
+              <strong style={{ color: colors.athleteCard.cyan }}>{livePlayer.spO2}</strong>
               <em>%</em>
             </div>
             <span className="vl2-insight-tag" style={{
-              color: player.spO2 >= 97 ? colors.fit : player.spO2 >= 94 ? colors.moderate : colors.critical,
+              color: livePlayer.spO2 >= 97 ? colors.fit : livePlayer.spO2 >= 94 ? colors.moderate : colors.critical,
             }}>
-              {player.spO2 >= 97 ? 'Optimal' : player.spO2 >= 94 ? 'Acceptable' : 'Low — act'}
+              {livePlayer.spO2 >= 97 ? 'Optimal' : livePlayer.spO2 >= 94 ? 'Acceptable' : 'Low — act'}
             </span>
           </div>
           <DonutRing
-            value={player.spO2} size={52} stroke={6}
+            value={livePlayer.spO2} size={52} stroke={6}
             color={colors.athleteCard.cyan}
             secondaryColor={colors.athleteCard.cyanBright}
             trackColor="rgba(255,255,255,0.05)"
@@ -187,13 +203,13 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
       {/* ── LOAD METRICS ── */}
       <section className="vl2-load">
         <LoadRow
-          label="Fatigue" insight={fatigueLabel(player.fatigue)}
-          value={player.fatigue} color={fatigueColor}
+          label="Fatigue" insight={fatigueLabel(livePlayer.fatigue)}
+          value={livePlayer.fatigue} color={fatigueColor}
           icon={<Zap size={16} fill="currentColor" strokeWidth={1.5}/>}
         />
         <LoadRow
-          label="Stress"  insight={stressLabel(player.stress)}
-          value={player.stress}  color={stressColor}
+          label="Stress"  insight={stressLabel(livePlayer.stress)}
+          value={livePlayer.stress}  color={stressColor}
           icon={<Brain size={16} strokeWidth={1.9}/>}
         />
       </section>
