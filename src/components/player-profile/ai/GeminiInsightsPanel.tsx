@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { InsightBadge } from './InsightBadge';
+import type { ProfileAIVisualState } from '@/application/mappers/toPlayerProfile';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface GeminiInsightsPanelProps {
@@ -10,6 +11,10 @@ interface GeminiInsightsPanelProps {
   subDetail?:  string;             // second bullet
   readiness:   'High' | 'Medium' | 'Low';
   isLive?:     boolean;
+  visualState?: ProfileAIVisualState;
+  isUrgent?: boolean;
+  alertLevel?: string | null;
+  playerState?: string | null;
 }
 
 const READINESS_COLOR: Record<string, string> = {
@@ -25,8 +30,23 @@ export const GeminiInsightsPanel: React.FC<GeminiInsightsPanelProps> = ({
   subDetail,
   readiness,
   isLive = true,
+  visualState = 'live',
+  isUrgent = false,
+  alertLevel,
+  playerState,
 }) => {
   const readinessColor = READINESS_COLOR[readiness] ?? 'var(--vl-muted)';
+  const liveState = getLiveState(visualState, isUrgent);
+  const subDetailVariant =
+    isUrgent || visualState === 'mismatch' || visualState === 'error' ? 'danger' :
+    visualState === 'stale' ? 'warning' :
+    visualState === 'warmup' ? 'info' :
+    'default';
+  const readinessVariant =
+    readiness === 'High' ? 'success' :
+    readiness === 'Medium' ? 'warning' :
+    'danger';
+  const statusDetail = [alertLevel, playerState].filter(Boolean).join(' / ');
 
   return (
     <section className="vl-gem" aria-labelledby="vl-gem-title">
@@ -43,9 +63,16 @@ export const GeminiInsightsPanel: React.FC<GeminiInsightsPanelProps> = ({
 
           {/* Live dot */}
           {isLive && (
-            <div className="vl-gem__live">
+            <div
+              className="vl-gem__live"
+              style={{
+                '--gem-live-color': liveState.color,
+                '--gem-live-bg': liveState.bg,
+                '--gem-live-border': liveState.border,
+              } as React.CSSProperties}
+            >
               <span className="vl-gem__live-dot" aria-hidden />
-              <span className="vl-gem__live-text">LIVE INSIGHTS</span>
+              <span className="vl-gem__live-text">{liveState.label}</span>
             </div>
           )}
         </div>
@@ -63,17 +90,22 @@ export const GeminiInsightsPanel: React.FC<GeminiInsightsPanelProps> = ({
         {subDetail && (
           <InsightBadge
             text={subDetail}
-            variant="default"
+            variant={subDetailVariant}
+          />
+        )}
+
+        {statusDetail && (
+          <InsightBadge
+            text={`AI status: ${statusDetail}`}
+            variant={isUrgent ? 'danger' : visualState === 'warmup' ? 'info' : 'default'}
+            highlight={alertLevel ?? undefined}
           />
         )}
 
         {/* Readiness bullet */}
         <InsightBadge
           text={`Readiness for next match: ${readiness}`}
-          variant={
-            readiness === 'High'   ? 'success'   :
-            readiness === 'Medium' ? 'warning'   : 'default'
-          }
+          variant={readinessVariant}
           highlight={readiness}
           highlightColor={readinessColor}
         />
@@ -136,15 +168,15 @@ export const GeminiInsightsPanel: React.FC<GeminiInsightsPanelProps> = ({
           align-items: center;
           gap: 5px;
           padding: 2px 8px;
-          background: rgba(139,92,246,0.10);
-          border: 0.5px solid rgba(168,85,247,0.22);
+          background: var(--gem-live-bg, rgba(139,92,246,0.10));
+          border: 0.5px solid var(--gem-live-border, rgba(168,85,247,0.22));
           border-radius: 9999px;
         }
 
         .vl-gem__live-dot {
           width: 5px; height: 5px;
           border-radius: 50%;
-          background: #A855F7;
+          background: var(--gem-live-color, #A855F7);
           animation: vl-gem-pulse 2s ease-in-out infinite;
         }
         @keyframes vl-gem-pulse {
@@ -157,7 +189,7 @@ export const GeminiInsightsPanel: React.FC<GeminiInsightsPanelProps> = ({
           font-size: 9px;
           font-weight: 700;
           letter-spacing: .1em;
-          color: #A855F7;
+          color: var(--gem-live-color, #A855F7);
         }
 
         /* ── Summary ─────────────────────────── */
@@ -180,6 +212,69 @@ export const GeminiInsightsPanel: React.FC<GeminiInsightsPanelProps> = ({
     </section>
   );
 };
+
+function getLiveState(visualState: ProfileAIVisualState, isUrgent: boolean) {
+  if (isUrgent) {
+    return {
+      label: 'URGENT',
+      color: '#FF5A5F',
+      bg: 'rgba(255,90,95,0.10)',
+      border: 'rgba(255,90,95,0.24)',
+    };
+  }
+
+  if (visualState === 'stale') {
+    return {
+      label: 'STALE',
+      color: '#FFB800',
+      bg: 'rgba(255,184,0,0.10)',
+      border: 'rgba(255,184,0,0.22)',
+    };
+  }
+
+  if (visualState === 'warmup') {
+    return {
+      label: 'WARMUP',
+      color: '#60A5FA',
+      bg: 'rgba(96,165,250,0.10)',
+      border: 'rgba(96,165,250,0.22)',
+    };
+  }
+
+  if (visualState === 'mismatch') {
+    return {
+      label: 'CHECK BELT',
+      color: '#FF5A5F',
+      bg: 'rgba(255,90,95,0.10)',
+      border: 'rgba(255,90,95,0.24)',
+    };
+  }
+
+  if (visualState === 'loading' || visualState === 'no-data') {
+    return {
+      label: 'ANALYZING',
+      color: '#8B5CF6',
+      bg: 'rgba(139,92,246,0.10)',
+      border: 'rgba(168,85,247,0.22)',
+    };
+  }
+
+  if (visualState === 'updating') {
+    return {
+      label: 'UPDATING',
+      color: '#A855F7',
+      bg: 'rgba(139,92,246,0.10)',
+      border: 'rgba(168,85,247,0.22)',
+    };
+  }
+
+  return {
+    label: 'LIVE INSIGHTS',
+    color: '#A855F7',
+    bg: 'rgba(139,92,246,0.10)',
+    border: 'rgba(168,85,247,0.22)',
+  };
+}
 
 // ─── Highlight helper ─────────────────────────────────────────────────────────
 function renderHighlight(text: string, phrase: string) {

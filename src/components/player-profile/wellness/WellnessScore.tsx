@@ -3,29 +3,61 @@
 import React from 'react';
 import { WellnessRing } from '@/components/player-profile/wellness/WellnessRing';
 import { Info } from 'lucide-react';
+import type { ProfileAIVisualState } from '@/application/mappers/toPlayerProfile';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface WellnessScoreProps {
-  score:         number;   // 0–100
+  score:         number | null;   // recovery readiness from latest AI
   onViewDetails?: () => void;
+  visualState?: ProfileAIVisualState;
+  recoveryTimeMin?: number | null;
+  freshnessLabel?: string;
 }
 
 // ─── Score config ─────────────────────────────────────────────────────────────
-const getScoreConfig = (v: number) => {
+const getScoreConfig = (
+  v: number | null,
+  visualState: ProfileAIVisualState,
+  recoveryTimeMin?: number | null,
+  freshnessLabel?: string
+) => {
+  if (visualState === 'mismatch') return {
+    label: 'CHECK BELT',
+    labelColor: '#FF5A5F',
+    description: 'AI recovery snapshot belongs to another belt.',
+  };
+  if (visualState === 'stale') return {
+    label: 'STALE',
+    labelColor: '#FFB800',
+    description: freshnessLabel ?? 'Recovery analysis is outdated.',
+  };
+  if (visualState === 'warmup') return {
+    label: 'WARMUP',
+    labelColor: '#60A5FA',
+    description: 'Recovery readiness is still warming up.',
+  };
+  if (visualState === 'loading' || visualState === 'no-data' || v === null) return {
+    label: 'ANALYZING',
+    labelColor: '#8B5CF6',
+    description: 'Waiting for AI recovery estimate.',
+  };
+  const recoveryCopy = recoveryTimeMin === null || recoveryTimeMin === undefined
+    ? ''
+    : ` Recovery estimate: ${Math.round(recoveryTimeMin)} min.`;
   if (v >= 80) return {
     label:       'GOOD',
     labelColor:  '#B6FF2E',
-    description: 'Recovery and mood are in good range.',
+    description: `Recovery readiness is in good range.${recoveryCopy}`,
   };
   if (v >= 60) return {
     label:       'MODERATE',
     labelColor:  '#FFB800',
-    description: 'Some recovery indicators need attention.',
+    description: `Some recovery indicators need attention.${recoveryCopy}`,
   };
   return {
     label:       'LOW',
     labelColor:  '#FF5A5F',
-    description: 'Recovery is below optimal. Monitor closely.',
+    description: `Recovery is below optimal. Monitor closely.${recoveryCopy}`,
   };
 };
 
@@ -33,8 +65,11 @@ const getScoreConfig = (v: number) => {
 export const WellnessScore: React.FC<WellnessScoreProps> = ({
   score,
   onViewDetails,
+  visualState = 'no-data',
+  recoveryTimeMin,
+  freshnessLabel,
 }) => {
-  const cfg = getScoreConfig(score);
+  const cfg = getScoreConfig(score, visualState, recoveryTimeMin, freshnessLabel);
 
   return (
     <div className="vl-ws">

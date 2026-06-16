@@ -3,7 +3,7 @@
 import React from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-export type InsightVariant = 'default' | 'highlight' | 'warning' | 'success';
+export type InsightVariant = 'default' | 'highlight' | 'warning' | 'success' | 'danger' | 'info';
 
 interface InsightBadgeProps {
   text:      string;
@@ -38,6 +38,16 @@ const VARIANT_CONFIG: Record<InsightVariant, {
     dotColor: '#B6FF2E',
     bg:       'rgba(182,255,46,0.055)',
     border:   'rgba(182,255,46,0.16)',
+  },
+  danger: {
+    dotColor: '#FF5A5F',
+    bg:       'rgba(255,90,95,0.07)',
+    border:   'rgba(255,90,95,0.18)',
+  },
+  info: {
+    dotColor: '#60A5FA',
+    bg:       'rgba(96,165,250,0.07)',
+    border:   'rgba(96,165,250,0.18)',
   },
 };
 

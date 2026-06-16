@@ -52,3 +52,48 @@ export const ANALYSIS_CYCLE = {
   COUNTDOWN_INTERVAL_MS: 1000,
   SIMULATION_INTERVAL_MS: 1000,
 } as const;
+
+// ═══════════════════════════════════════════════════════
+// AI Service Configuration
+// ═══════════════════════════════════════════════════════
+export const AI_CONFIG = {
+  REFETCH_INTERVAL_MS: 3000,          
+  TIMELINE_REFETCH_INTERVAL_MS: 30000, 
+  HEALTH_REFETCH_INTERVAL_MS: 10000,  
+  
+  STALE_THRESHOLD_SECONDS: 30,        
+  WARMUP_DURATION_SECONDS: 120,        
+  ANALYSIS_THRESHOLD_SECONDS: 600,     
+} as const;
+
+// ═══════════════════════════════════════════════════════
+// UI Thresholds (للـ colors والـ levels)
+// ═══════════════════════════════════════════════════════
+export const UI_THRESHOLDS = {
+  // Scores
+  EXCELLENT: 80,
+  GOOD: 65,
+  MODERATE: 50,
+  LOW: 0,
+  
+  // Cramp risk
+  CRAMP_RISK_HIGH: 70,
+  CRAMP_RISK_MEDIUM: 40,
+  
+  // Stress
+  STRESS_HIGH: 75,
+  STRESS_MEDIUM: 50,
+  
+  // Fatigue
+  FATIGUE_HIGH: 80,
+  FATIGUE_MEDIUM: 60,
+  FATIGUE_LOW: 40,
+} as const;
+
+// ═══════════════════════════════════════════════════════
+// User Roles
+// ═══════════════════════════════════════════════════════
+export const USER_ROLES = {
+  COACH: 0,
+  ANALYST: 1,
+} as const;

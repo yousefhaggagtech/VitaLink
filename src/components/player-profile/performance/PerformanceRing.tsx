@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PerformanceRingProps {
-  value:   number;    // 0–100
+  value:   number | null;    // 0-100, or null while AI is not ready
   size?:   number;    // px default 100
   stroke?: number;    // default 10
 }
@@ -18,7 +18,8 @@ export const PerformanceRing: React.FC<PerformanceRingProps> = ({
   const uid = useMemo(() => `pfr-${Math.random().toString(36).slice(2, 6)}`, []);
   const r   = (size - stroke) / 2;
   const c   = 2 * Math.PI * r;
-  const off = c - (value / 100) * c;
+  const safeValue = value === null ? 0 : Math.min(100, Math.max(0, value));
+  const off = c - (safeValue / 100) * c;
 
   return (
     <div className="vl-pfr" style={{ width: size, height: size }}>
@@ -85,8 +86,8 @@ export const PerformanceRing: React.FC<PerformanceRingProps> = ({
 
       {/* Center label */}
       <div className="vl-pfr__center">
-        <span className="vl-pfr__score">{Math.round(value)}</span>
-        <span className="vl-pfr__denom">/100</span>
+        <span className="vl-pfr__score">{value === null ? '--' : Math.round(value)}</span>
+        <span className="vl-pfr__denom">{value === null ? 'AI' : '/100'}</span>
       </div>
 
       <style>{`

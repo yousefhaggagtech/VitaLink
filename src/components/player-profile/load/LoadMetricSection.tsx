@@ -4,30 +4,60 @@ import React from 'react';
 import { LoadMetricBar } from '@/components/player-profile/load/LoadMetricBar';
 import { AthleteHologram } from '@/components/player-profile/load/AthleteHologram';
 import { Zap, Brain } from 'lucide-react';
+import type { ProfileAIVisualState } from '@/application/mappers/toPlayerProfile';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface LoadMetricsSectionProps {
-  fatigue:    number;   // 0–100
-  stressLoad: number;   // 0–100
+  fatigue:    number | null;   // cramp risk from latest AI
+  stressLoad: number | null;   // momentum from latest AI
+  visualState?: ProfileAIVisualState;
 }
 
 // ─── Insight helpers ──────────────────────────────────────────────────────────
-const fatigueInsight = (v: number) =>
-  v > 80 ? 'Replace Now' : v > 60 ? 'Watch Closely' : v > 40 ? 'Building Up' : 'Good Shape';
+const pendingInsight = (visualState: ProfileAIVisualState) => {
+  if (visualState === 'stale') return 'Stale Data';
+  if (visualState === 'warmup') return 'Warming Up';
+  if (visualState === 'mismatch') return 'Check Belt';
+  if (visualState === 'error') return 'Unavailable';
+  return 'Analyzing';
+};
 
-const stressInsight = (v: number) =>
-  v > 75 ? 'High Load' : v > 50 ? 'Elevated' : v > 30 ? 'Manageable' : 'Calm';
+const stateColor = (visualState: ProfileAIVisualState) => {
+  if (visualState === 'stale') return '#FFB800';
+  if (visualState === 'warmup') return '#60A5FA';
+  if (visualState === 'mismatch' || visualState === 'error') return '#FF5A5F';
+  return '#8B5CF6';
+};
 
-const metricColor = (v: number, high: number, mid: number, low: string, midColor: string, highColor: string) =>
-  v > high ? highColor : v > mid ? midColor : low;
+const crampRiskInsight = (v: number | null, visualState: ProfileAIVisualState) =>
+  v === null ? pendingInsight(visualState) :
+  v > 70 ? 'High Risk' : v > 40 ? 'Elevated' : v > 0 ? 'Low Risk' : 'Pending';
+
+const momentumInsight = (v: number | null, visualState: ProfileAIVisualState) =>
+  v === null ? pendingInsight(visualState) :
+  v > 70 ? 'Surging' : v > 50 ? 'Stable' : v > 30 ? 'Dropping' : 'Fading';
+
+const metricColor = (
+  v: number | null,
+  visualState: ProfileAIVisualState,
+  high: number,
+  mid: number,
+  low: string,
+  midColor: string,
+  highColor: string
+) =>
+  v === null ? stateColor(visualState) : v > high ? highColor : v > mid ? midColor : low;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export const LoadMetricsSection: React.FC<LoadMetricsSectionProps> = ({
   fatigue,
   stressLoad,
+  visualState = 'no-data',
 }) => {
-  const fatigueColor = metricColor(fatigue,    80, 55, '#B6FF2E', '#FFB800', '#FF5A5F');
-  const stressColor  = metricColor(stressLoad, 75, 50, '#8B5CF6', '#FFB800', '#FF5A5F');
+  const fatigueColor = metricColor(fatigue, visualState, 70, 40, '#B6FF2E', '#FFB800', '#FF5A5F');
+  const stressColor =
+    stressLoad === null ? stateColor(visualState) :
+    stressLoad > 70 ? '#B6FF2E' : stressLoad > 50 ? '#8B5CF6' : stressLoad > 30 ? '#FFB800' : '#FF5A5F';
 
   return (
     <section className="vl-load" aria-labelledby="vl-load-title">
@@ -43,16 +73,16 @@ export const LoadMetricsSection: React.FC<LoadMetricsSectionProps> = ({
         {/* ── Bars ── */}
         <div className="vl-load__bars">
           <LoadMetricBar
-            label="Fatigue"
+            label="Cramp Risk"
             value={fatigue}
-            insight={fatigueInsight(fatigue)}
+            insight={crampRiskInsight(fatigue, visualState)}
             color={fatigueColor}
             icon={<Zap size={14} fill="currentColor" strokeWidth={1.5} />}
           />
           <LoadMetricBar
-            label="Stress"
+            label="Momentum"
             value={stressLoad}
-            insight={stressInsight(stressLoad)}
+            insight={momentumInsight(stressLoad, visualState)}
             color={stressColor}
             icon={<Brain size={14} strokeWidth={1.8} />}
           />
@@ -60,7 +90,7 @@ export const LoadMetricsSection: React.FC<LoadMetricsSectionProps> = ({
 
         {/* ── Hologram ── */}
         <div className="vl-load__holo">
-          <AthleteHologram fatigueLevel={fatigue} size={130} />
+          <AthleteHologram fatigueLevel={fatigue} visualState={visualState} size={130} />
         </div>
 
       </div>

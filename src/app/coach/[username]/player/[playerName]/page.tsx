@@ -6,7 +6,9 @@ import { useParams, useSearchParams } from 'next/navigation';
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 import { usePlayerDetail } from '@/application/hooks/usePlayerDetail';
 import { usePlayerProfileRealtime } from '@/application/hooks/usePlayerProfileRealtime';
+import { useAIAnalysis } from '@/application/hooks/useAIAnalysis';
 import { toPlayerProfile } from '@/application/mappers/toPlayerProfile';
+import { applyAIAnalysisToProfile } from '@/application/mappers/applyAIAnalysisToProfile';
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 import { PlayerProfileLayout } from '@/components/player-profile/layout/PlayerProfileLayout';
@@ -37,6 +39,8 @@ import { BottomStatsBar }     from '@/components/player-profile/stats/BottomStat
 // ── UI Tokens ─────────────────────────────────────────────────────────────────
 import { colors } from '@/styles/tokens/colors';
 
+export const dynamic = 'force-dynamic';
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function PlayerProfilePage() {
   const params = useParams();
@@ -46,6 +50,7 @@ export default function PlayerProfilePage() {
 
   // Fetch real player data using beltId from query param
   const { player, loading, error } = usePlayerDetail(beltId);
+  const aiAnalysis = useAIAnalysis(beltId || null);
 
   // Map API response to UI shape
   const profileData = player ? toPlayerProfile(player) : null;
@@ -74,14 +79,14 @@ export default function PlayerProfilePage() {
         temperature: { value: 0, history: [] },
         stress: { value: 0, history: [] },
       },
-      fatigue: 0,
-      stressLoad: 0,
-      wellnessScore: 0,
-      performanceScore: 0,
+      fatigue: null,
+      stressLoad: null,
+      wellnessScore: null,
+      performanceScore: null,
       comparison: {
-        fatigue: { value: 0, delta: 0 },
-        load: { value: 0, delta: 0 },
-        stress: { value: 0, delta: 0 },
+        fatigue: { value: null, delta: null },
+        load: { value: null, delta: null },
+        stress: { value: null, delta: null },
       },
       aiInsight: {
         summary: '',
@@ -89,6 +94,23 @@ export default function PlayerProfilePage() {
         subDetail: '',
         keyPoints: [],
         readiness: 'High',
+        context: {
+          visualState: 'no-data',
+          selectedBeltId: beltId,
+          snapshotBeltId: null,
+          timestamp: null,
+          analysisTimeLabel: 'No AI analysis yet',
+          ageSinceLastUpdate: null,
+          freshnessLabel: 'No data yet',
+          isStale: false,
+          isInWarmup: false,
+          alertLevel: null,
+          playerState: null,
+          substitutionWindow: null,
+          isUrgent: false,
+          recoveryTimeMin: null,
+          timeToFailMin: null,
+        },
       },
       sessionStats: {
         distance: 0,
@@ -100,8 +122,19 @@ export default function PlayerProfilePage() {
     },
   });
 
-  // Use realtime data if available, otherwise use initially mapped data
-  const p = realtime.profileData || profileData;
+  // Use realtime vitals plus latest AI analysis when available
+  const realtimeProfile = realtime.profileData || profileData;
+  const p = realtimeProfile
+    ? applyAIAnalysisToProfile(realtimeProfile, {
+        recommendation: aiAnalysis.recommendation,
+        rawResponse: aiAnalysis.rawResponse,
+        waitingState: aiAnalysis.waitingState,
+        clientStatus: aiAnalysis.clientStatus,
+        isLoading: aiAnalysis.isLoading,
+        isError: aiAnalysis.isError,
+        error: aiAnalysis.error,
+      })
+    : null;
 
   // Render loading state
   if (loading) {
@@ -168,6 +201,10 @@ export default function PlayerProfilePage() {
     );
   }
 
+  if (!p) return null;
+
+  const aiContext = p.aiInsight.context;
+
   return (
     <>
       <style>{`
@@ -198,37 +235,58 @@ export default function PlayerProfilePage() {
 
           {/* Left: Load metrics */}
           <div className="vl-pg__left">
-            <LoadMetricsSection fatigue={p.fatigue} stressLoad={p.stressLoad} />
+            <LoadMetricsSection
+              fatigue={p.fatigue}
+              stressLoad={p.stressLoad}
+              visualState={aiContext.visualState}
+            />
 
             {/* Performance + VS previous */}
             <div className="vl-pg__perf-row">
               <PerformanceScore
                 score={p.performanceScore}
-                delta={6}
-                deltaLabel="vs last 7 days"
+                delta={p.comparison.load.delta}
+                deltaLabel="from latest AI"
+                visualState={aiContext.visualState}
+                alertLevel={aiContext.alertLevel}
+                isUrgent={aiContext.isUrgent}
+                freshnessLabel={aiContext.freshnessLabel}
               />
               <VSPreviousMatch
                 fatigue={p.comparison.fatigue}
                 load={p.comparison.load}
                 stress={p.comparison.stress}
+                matchLabel="latest AI metrics"
+                visualState={aiContext.visualState}
               />
             </div>
           </div>
 
           {/* Right: Wellness + AI + Key insights */}
           <div className="vl-pg__right">
-            <WellnessScore score={p.wellnessScore} />
+            <WellnessScore
+              score={p.wellnessScore}
+              visualState={aiContext.visualState}
+              recoveryTimeMin={aiContext.recoveryTimeMin}
+              freshnessLabel={aiContext.freshnessLabel}
+            />
 
             <GeminiInsightsPanel
               summary={p.aiInsight.summary}
               highlight={p.aiInsight.highlight}
               subDetail={p.aiInsight.subDetail}
               readiness={p.aiInsight.readiness}
+              visualState={aiContext.visualState}
+              isUrgent={aiContext.isUrgent}
+              alertLevel={aiContext.alertLevel}
+              playerState={aiContext.playerState}
               isLive
             />
 
             <KeyInsights
               points={p.aiInsight.keyPoints}
+              visualState={aiContext.visualState}
+              isUrgent={aiContext.isUrgent}
             />
           </div>
         </div>

@@ -2,11 +2,14 @@
 
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import type { ProfileAIVisualState } from '@/application/mappers/toPlayerProfile';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface KeyInsightsProps {
   points:           string[];
   onViewAnalysis?:  () => void;
+  visualState?: ProfileAIVisualState;
+  isUrgent?: boolean;
 }
 
 // ─── Check icon ───────────────────────────────────────────────────────────────
@@ -30,7 +33,15 @@ const CheckIcon: React.FC<{ color: string }> = ({ color }) => (
 export const KeyInsights: React.FC<KeyInsightsProps> = ({
   points,
   onViewAnalysis,
+  visualState = 'live',
+  isUrgent = false,
 }) => {
+  const iconColor =
+    isUrgent || visualState === 'mismatch' || visualState === 'error' ? '#FF5A5F' :
+    visualState === 'stale' ? '#FFB800' :
+    visualState === 'warmup' ? '#60A5FA' :
+    '#B6FF2E';
+
   return (
     <section className="vl-ki" aria-labelledby="vl-ki-title">
 
@@ -41,7 +52,7 @@ export const KeyInsights: React.FC<KeyInsightsProps> = ({
       <ul className="vl-ki__list" role="list">
         {points.map((point, i) => (
           <li key={i} className="vl-ki__item" role="listitem">
-            <CheckIcon color="#B6FF2E" />
+            <CheckIcon color={iconColor} />
             <span className="vl-ki__text">{point}</span>
           </li>
         ))}

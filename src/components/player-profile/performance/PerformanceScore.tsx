@@ -3,17 +3,34 @@
 import React from 'react';
 import { PerformanceRing } from '@/components/player-profile/performance/PerformanceRing';
 import { Info } from 'lucide-react';
+import type { ProfileAIVisualState } from '@/application/mappers/toPlayerProfile';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PerformanceScoreProps {
-  score:          number;    // 0–100
-  delta?:         number;    // vs last 7 days — positive = up
-  deltaLabel?:    string;    // e.g. "vs last 7 days"
+  score:          number | null;    // latest AI power mapped to 0-100
+  delta?:         number | null;
+  deltaLabel?:    string;
   onInfo?:        () => void;
+  visualState?:   ProfileAIVisualState;
+  alertLevel?:    string | null;
+  isUrgent?:      boolean;
+  freshnessLabel?: string;
 }
 
 // ─── Score config ─────────────────────────────────────────────────────────────
-const getConfig = (v: number) => {
+const getConfig = (
+  v: number | null,
+  visualState: ProfileAIVisualState,
+  isUrgent?: boolean,
+  freshnessLabel?: string
+) => {
+  if (visualState === 'mismatch') return { label: 'CHECK BELT', color: '#FF5A5F', desc: 'AI snapshot does not match this belt.' };
+  if (visualState === 'stale') return { label: 'STALE', color: '#FFB800', desc: freshnessLabel ?? 'Waiting for fresh AI power.' };
+  if (visualState === 'warmup') return { label: 'WARMUP', color: '#60A5FA', desc: 'Power analysis is still warming up.' };
+  if (visualState === 'loading' || visualState === 'no-data') return { label: 'ANALYZING', color: '#8B5CF6', desc: 'Waiting for latest AI power.' };
+  if (visualState === 'error') return { label: 'UNAVAILABLE', color: '#FF5A5F', desc: 'AI power is temporarily unavailable.' };
+  if (v === null) return { label: 'ANALYZING', color: '#8B5CF6', desc: 'Power metric has not arrived yet.' };
+  if (isUrgent) return { label: 'URGENT', color: '#FF5A5F', desc: 'Coach attention is recommended now.' };
   if (v >= 80) return { label: 'EXCELLENT', color: '#B6FF2E', desc: 'Peak performance today.' };
   if (v >= 65) return { label: 'GOOD',      color: '#4ADE80', desc: 'Consistent performance today.' };
   if (v >= 50) return { label: 'MODERATE',  color: '#FFB800', desc: 'Below average output today.' };
@@ -24,17 +41,22 @@ const getConfig = (v: number) => {
 export const PerformanceScore: React.FC<PerformanceScoreProps> = ({
   score,
   delta,
-  deltaLabel = 'vs last 7 days',
+  deltaLabel = 'from latest AI',
   onInfo,
+  visualState = 'no-data',
+  isUrgent,
+  freshnessLabel,
 }) => {
-  const cfg = getConfig(score);
+  const cfg = getConfig(score, visualState, isUrgent, freshnessLabel);
 
-  const deltaColor = delta === undefined ? 'var(--vl-muted-deep)'
-    : delta > 0 ? '#B6FF2E'
-    : delta < 0 ? '#FF5A5F'
+  const hasDelta = delta !== undefined && delta !== null;
+  const deltaValue = delta ?? 0;
+  const deltaColor = !hasDelta ? 'var(--vl-muted-deep)'
+    : deltaValue > 0 ? '#B6FF2E'
+    : deltaValue < 0 ? '#FF5A5F'
     : 'var(--vl-muted-deep)';
 
-  const deltaSign = delta === undefined ? '' : delta > 0 ? '+' : delta < 0 ? '-' : '0';
+  const deltaSign = !hasDelta ? '' : deltaValue > 0 ? '+' : deltaValue < 0 ? '-' : '';
 
   return (
     <section className="vl-ps" aria-labelledby="vl-ps-title">
@@ -66,10 +88,10 @@ export const PerformanceScore: React.FC<PerformanceScoreProps> = ({
           <p className="vl-ps__desc">{cfg.desc}</p>
 
           {/* Delta badge */}
-          {delta !== undefined && (
+          {hasDelta && (
             <div className="vl-ps__delta" style={{ color: deltaColor }}>
               <span className="vl-ps__delta-arrow">{deltaSign}</span>
-              <span className="vl-ps__delta-val">{Math.abs(delta)}</span>
+              <span className="vl-ps__delta-val">{Math.abs(deltaValue)}</span>
               <span className="vl-ps__delta-label">{deltaLabel}</span>
             </div>
           )}

@@ -1,46 +1,49 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import type { ProfileComparisonMetric, ProfileAIVisualState } from '@/application/mappers/toPlayerProfile';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface ComparisonMetric {
   label: string;
-  value: number;    // 0–100 (ring fill)
-  delta: number;    // positive = up vs prev
+  value: number | null;
+  delta: number | null;
   color: string;
+  stateLabel: string;
 }
 
 interface VSPreviousMatchProps {
-  fatigue: { value: number; delta: number };
-  load:    { value: number; delta: number };
-  stress:  { value: number; delta: number };
+  fatigue: ProfileComparisonMetric;
+  load: ProfileComparisonMetric;
+  stress: ProfileComparisonMetric;
   matchLabel?: string;
+  visualState?: ProfileAIVisualState;
 }
 
-// ─── Single comparison ring ───────────────────────────────────────────────────
 interface ComparisonRingProps {
   metric: ComparisonMetric;
-  size?:  number;
+  size?: number;
   stroke?: number;
 }
 
 const ComparisonRing: React.FC<ComparisonRingProps> = ({
   metric,
-  size   = 68,
+  size = 68,
   stroke = 6,
 }) => {
   const uid = useMemo(() => `cmp-${Math.random().toString(36).slice(2, 6)}`, []);
-  const r   = (size - stroke) / 2;
-  const c   = 2 * Math.PI * r;
-  const off = c - (metric.value / 100) * c;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const safeValue = metric.value === null ? 0 : Math.min(100, Math.max(0, metric.value));
+  const off = c - (safeValue / 100) * c;
 
-  const deltaPositive = metric.delta > 0;
-  const deltaColor    = deltaPositive ? '#FF5A5F' : '#B6FF2E'; // up fatigue = bad
-  const deltaSign     = metric.delta > 0 ? '+' : metric.delta < 0 ? '-' : '0';
+  const hasDelta = metric.delta !== null;
+  const deltaValue = metric.delta ?? 0;
+  const deltaPositive = hasDelta && deltaValue > 0;
+  const deltaColor = deltaPositive ? '#FF5A5F' : '#B6FF2E';
+  const deltaSign = !hasDelta ? '' : deltaValue > 0 ? '+' : deltaValue < 0 ? '-' : '';
 
   return (
     <div className="vl-cmp">
-      {/* Ring */}
       <div className="vl-cmp__ring-wrap" style={{ width: size, height: size }}>
         <svg
           width={size} height={size}
@@ -50,12 +53,11 @@ const ComparisonRing: React.FC<ComparisonRingProps> = ({
         >
           <defs>
             <linearGradient id={`${uid}-g`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%"   stopColor={metric.color} stopOpacity="0.9" />
+              <stop offset="0%" stopColor={metric.color} stopOpacity="0.9" />
               <stop offset="100%" stopColor={metric.color} stopOpacity="0.55" />
             </linearGradient>
           </defs>
 
-          {/* Track */}
           <circle
             cx={size / 2} cy={size / 2} r={r}
             fill="none"
@@ -63,7 +65,6 @@ const ComparisonRing: React.FC<ComparisonRingProps> = ({
             strokeWidth={stroke}
           />
 
-          {/* Arc */}
           <circle
             cx={size / 2} cy={size / 2} r={r}
             fill="none"
@@ -76,26 +77,33 @@ const ComparisonRing: React.FC<ComparisonRingProps> = ({
           />
         </svg>
 
-        {/* Center % */}
         <div className="vl-cmp__center">
           <span className="vl-cmp__pct" style={{ color: metric.color }}>
-            {metric.value}%
+            {metric.value === null ? '--' : `${Math.round(metric.value)}%`}
           </span>
         </div>
       </div>
 
-      {/* Label */}
       <span className="vl-cmp__label">{metric.label}</span>
 
-      {/* Delta */}
-      <div
-        className="vl-cmp__delta"
-        style={{ color: deltaColor }}
-        aria-label={`${metric.delta > 0 ? 'up' : 'down'} ${Math.abs(metric.delta)}% vs previous match`}
-      >
-        <span className="vl-cmp__delta-sign">{deltaSign}</span>
-        <span className="vl-cmp__delta-val">{Math.abs(metric.delta)}%</span>
-      </div>
+      {hasDelta ? (
+        <div
+          className="vl-cmp__delta"
+          style={{ color: deltaColor }}
+          aria-label={`${deltaValue > 0 ? 'up' : 'down'} ${Math.abs(deltaValue)}% from latest AI baseline`}
+        >
+          <span className="vl-cmp__delta-sign">{deltaSign}</span>
+          <span className="vl-cmp__delta-val">{Math.abs(deltaValue)}%</span>
+        </div>
+      ) : (
+        <div
+          className="vl-cmp__delta"
+          style={{ color: 'var(--vl-muted-deep)' }}
+          aria-label={`${metric.label} ${metric.stateLabel.toLowerCase()} from latest AI`}
+        >
+          <span className="vl-cmp__delta-val">{metric.stateLabel}</span>
+        </div>
+      )}
 
       <style>{`
         .vl-cmp {
@@ -147,34 +155,43 @@ const ComparisonRing: React.FC<ComparisonRingProps> = ({
         }
 
         .vl-cmp__delta-sign { font-size: 12px; }
-        .vl-cmp__delta-val  { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+        .vl-cmp__delta-val { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
       `}</style>
     </div>
   );
 };
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export const VSPreviousMatch: React.FC<VSPreviousMatchProps> = ({
   fatigue,
   load,
   stress,
-  matchLabel = 'vs previous match',
+  matchLabel = 'latest AI metrics',
+  visualState = 'live',
 }) => {
+  const pendingColor =
+    visualState === 'stale' ? '#FFB800' :
+    visualState === 'warmup' ? '#60A5FA' :
+    visualState === 'mismatch' || visualState === 'error' ? '#FF5A5F' :
+    '#8B5CF6';
+  const stateLabel =
+    visualState === 'stale' ? 'STALE' :
+    visualState === 'warmup' ? 'WARM' :
+    visualState === 'mismatch' ? 'BELT' :
+    visualState === 'error' ? 'OFF' :
+    visualState === 'no-data' || visualState === 'loading' ? 'PEND' :
+    'LIVE';
   const metrics: ComparisonMetric[] = [
-    { label: 'Fatigue', value: fatigue.value, delta: fatigue.delta, color: '#FACC15' },
-    { label: 'Load',    value: load.value,    delta: load.delta,    color: '#38BDF8' },
-    { label: 'Stress',  value: stress.value,  delta: stress.delta,  color: '#8B5CF6' },
+    { label: 'Cramp', value: fatigue.value, delta: fatigue.delta, color: fatigue.value === null ? pendingColor : '#FACC15', stateLabel },
+    { label: 'Power', value: load.value, delta: load.delta, color: load.value === null ? pendingColor : '#38BDF8', stateLabel },
+    { label: 'Momentum', value: stress.value, delta: stress.delta, color: stress.value === null ? pendingColor : '#8B5CF6', stateLabel },
   ];
 
   return (
     <section className="vl-vs" aria-labelledby="vl-vs-title">
-
-      {/* Header */}
       <h2 className="vl-vs__title" id="vl-vs-title">
         {matchLabel.toUpperCase()}
       </h2>
 
-      {/* Rings row */}
       <div className="vl-vs__grid" role="list">
         {metrics.map(metric => (
           <div key={metric.label} role="listitem">
@@ -184,7 +201,6 @@ export const VSPreviousMatch: React.FC<VSPreviousMatchProps> = ({
       </div>
 
       <style>{`
-        /* ── Card ────────────────────────────── */
         .vl-vs {
           position: relative;
           display: flex;
@@ -216,7 +232,6 @@ export const VSPreviousMatch: React.FC<VSPreviousMatchProps> = ({
           z-index: 1;
         }
 
-        /* ── Title ───────────────────────────── */
         .vl-vs__title {
           font-family: 'DM Sans', sans-serif;
           font-size: 11px;
@@ -226,7 +241,6 @@ export const VSPreviousMatch: React.FC<VSPreviousMatchProps> = ({
           margin: 0;
         }
 
-        /* ── Rings grid ──────────────────────── */
         .vl-vs__grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);

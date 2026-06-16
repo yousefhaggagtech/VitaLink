@@ -5,7 +5,7 @@ import React from 'react';
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface LoadMetricBarProps {
   label:   string;
-  value:   number;    // 0–100
+  value:   number | null;    // 0-100, or null while AI is not ready
   insight: string;    // e.g. "Good Shape" | "Calm"
   color:   string;
   icon:    React.ReactNode;
@@ -21,7 +21,9 @@ export const LoadMetricBar: React.FC<LoadMetricBarProps> = ({
   icon,
   total = 14,
 }) => {
-  const filled = Math.round((Math.min(value, 100) / 100) * total);
+  const safeValue = value === null ? 0 : Math.min(100, Math.max(0, value));
+  const filled = Math.round((safeValue / 100) * total);
+  const displayValue = value === null ? '--' : `${Math.round(value)}%`;
 
   return (
     <div
@@ -41,14 +43,14 @@ export const LoadMetricBar: React.FC<LoadMetricBarProps> = ({
           </span>
         </div>
         <span className="vl-lmb__value" style={{ color }}>
-          {Math.round(value)}%
+          {displayValue}
         </span>
       </div>
 
       {/* ── Segmented bar ── */}
       <div className="vl-lmb__track" role="progressbar"
-        aria-valuenow={value} aria-valuemin={0} aria-valuemax={100}
-        aria-label={`${label} ${value}%`}
+        aria-valuenow={value ?? undefined} aria-valuemin={0} aria-valuemax={100}
+        aria-label={value === null ? `${label} pending` : `${label} ${value}%`}
       >
         {Array.from({ length: total }).map((_, i) => (
           <div

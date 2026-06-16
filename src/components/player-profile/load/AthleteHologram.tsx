@@ -2,30 +2,50 @@
 
 import React from 'react';
 import Image from 'next/image';
+import type { ProfileAIVisualState } from '@/application/mappers/toPlayerProfile';
 
 interface AthleteHologramProps {
-  fatigueLevel?: number;
+  fatigueLevel?: number | null;
   size?: number;
+  visualState?: ProfileAIVisualState;
 }
 
-const getLoadCopy = (value: number) => {
+const getPendingCopy = (visualState: ProfileAIVisualState) => {
+  if (visualState === 'stale') return 'STALE';
+  if (visualState === 'warmup') return 'WARMUP';
+  if (visualState === 'mismatch') return 'CHECK BELT';
+  if (visualState === 'error') return 'OFFLINE';
+  return 'ANALYZING';
+};
+
+const getLoadCopy = (value: number | null, visualState: ProfileAIVisualState) => {
+  if (value === null) return getPendingCopy(visualState);
   if (value > 80) return 'HIGH LOAD';
   if (value > 55) return 'MOD LOAD';
   return 'OPTIMAL';
 };
 
 export const AthleteHologram: React.FC<AthleteHologramProps> = ({
-  fatigueLevel = 30,
+  fatigueLevel = null,
   size = 140,
+  visualState = 'no-data',
 }) => {
-  const load = Math.max(0, Math.min(100, Math.round(fatigueLevel)));
+  const load = fatigueLevel === null ? 0 : Math.max(0, Math.min(100, Math.round(fatigueLevel)));
 
   const accentColor =
+    fatigueLevel === null && visualState === 'warmup' ? '#60A5FA' :
+    fatigueLevel === null && visualState === 'stale' ? '#FFB800' :
+    fatigueLevel === null && (visualState === 'mismatch' || visualState === 'error') ? '#FF5A5F' :
+    fatigueLevel === null ? '#8B5CF6' :
     load > 80 ? '#FF5A5F' :
     load > 55 ? '#FFB800' :
     '#B6FF2E';
 
   const accentRgb =
+    fatigueLevel === null && visualState === 'warmup' ? '96,165,250' :
+    fatigueLevel === null && visualState === 'stale' ? '255,184,0' :
+    fatigueLevel === null && (visualState === 'mismatch' || visualState === 'error') ? '255,90,95' :
+    fatigueLevel === null ? '139,92,246' :
     load > 80 ? '255,90,95' :
     load > 55 ? '255,184,0' :
     '182,255,46';
@@ -60,10 +80,10 @@ export const AthleteHologram: React.FC<AthleteHologramProps> = ({
         <div className="vl-holo__readout">
           <span className="vl-holo__label">AI LOAD</span>
           <span className="vl-holo__value">
-            {load}
-            <small>%</small>
+            {fatigueLevel === null ? '--' : load}
+            <small>{fatigueLevel === null ? '' : '%'}</small>
           </span>
-          <span className="vl-holo__state">{getLoadCopy(load)}</span>
+          <span className="vl-holo__state">{getLoadCopy(fatigueLevel, visualState)}</span>
         </div>
       </div>
 

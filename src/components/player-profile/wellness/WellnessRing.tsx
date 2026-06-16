@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface WellnessRingProps {
-  value:  number;   // 0–100
+  value:  number | null;   // 0-100, or null while AI is not ready
   size?:  number;   // px (default 110)
   stroke?: number;  // stroke width (default 9)
 }
@@ -18,7 +18,8 @@ export const WellnessRing: React.FC<WellnessRingProps> = ({
   const uid = useMemo(() => `wr-${Math.random().toString(36).slice(2, 6)}`, []);
   const r   = (size - stroke) / 2;
   const c   = 2 * Math.PI * r;
-  const off = c - (value / 100) * c;
+  const safeValue = value === null ? 0 : Math.min(100, Math.max(0, value));
+  const off = c - (safeValue / 100) * c;
 
   return (
     <div className="vl-wr" style={{ width: size, height: size }}>
@@ -83,8 +84,8 @@ export const WellnessRing: React.FC<WellnessRingProps> = ({
 
       {/* Center text (not rotated) */}
       <div className="vl-wr__center">
-        <span className="vl-wr__score">{Math.round(value)}</span>
-        <span className="vl-wr__denom">/100</span>
+        <span className="vl-wr__score">{value === null ? '--' : Math.round(value)}</span>
+        <span className="vl-wr__denom">{value === null ? 'AI' : '/100'}</span>
       </div>
 
       <style>{`

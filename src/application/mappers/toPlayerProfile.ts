@@ -1,5 +1,38 @@
 import { BeltPlayer } from '@/domain/entities/BeltPlayer';
 
+export type ProfileAIVisualState =
+  | 'no-data'
+  | 'loading'
+  | 'live'
+  | 'updating'
+  | 'warmup'
+  | 'stale'
+  | 'error'
+  | 'mismatch';
+
+export interface ProfileAIContext {
+  visualState: ProfileAIVisualState;
+  selectedBeltId: string;
+  snapshotBeltId: string | null;
+  timestamp: string | null;
+  analysisTimeLabel: string;
+  ageSinceLastUpdate: number | null;
+  freshnessLabel: string;
+  isStale: boolean;
+  isInWarmup: boolean;
+  alertLevel: string | null;
+  playerState: string | null;
+  substitutionWindow: string | null;
+  isUrgent: boolean;
+  recoveryTimeMin: number | null;
+  timeToFailMin: number | null;
+}
+
+export interface ProfileComparisonMetric {
+  value: number | null;
+  delta: number | null;
+}
+
 // ─── UI shape (matches what PlayerProfilePage expects) ────────────────────────
 export interface PlayerProfileData {
   // Identity
@@ -35,26 +68,27 @@ export interface PlayerProfileData {
     stress:      { value: number; history: number[] };
   };
 
-  // Performance metrics — will be overwritten by Node.js metrics service
-  fatigue:          number;
-  stressLoad:       number;
-  wellnessScore:    number;
-  performanceScore: number;
+  // AI presentation metrics are overlaid by the latest AI endpoint.
+  fatigue:          number | null;
+  stressLoad:       number | null;
+  wellnessScore:    number | null;
+  performanceScore: number | null;
 
-  // VS previous match — static until history API is ready
+  // Compact comparison rings are overlaid by latest AI metrics.
   comparison: {
-    fatigue: { value: number; delta: number };
-    load:    { value: number; delta: number };
-    stress:  { value: number; delta: number };
+    fatigue: ProfileComparisonMetric;
+    load:    ProfileComparisonMetric;
+    stress:  ProfileComparisonMetric;
   };
 
-  // AI insight — static until Gemini API is integrated
+  // AI insight fallback until the latest AI endpoint responds.
   aiInsight: {
     summary:   string;
     highlight: string;
     subDetail: string;
     keyPoints: string[];
     readiness: 'High' | 'Medium' | 'Low';
+    context: ProfileAIContext;
   };
 
   // Session stats — static until session history API is ready
@@ -141,17 +175,17 @@ export function toPlayerProfile(detail: BeltPlayer): PlayerProfileData {
       stress:      { value: 0, history: flatHistory(0) },
     },
 
-    // ── Metrics — zeros until Node.js metrics service pushes values ──────────
-    fatigue:          0,
-    stressLoad:       0,
-    wellnessScore:    0,
-    performanceScore: 0,
+    // ── Metrics fallback; latest AI endpoint overlays these values ───────────
+    fatigue:          null,
+    stressLoad:       null,
+    wellnessScore:    null,
+    performanceScore: null,
 
     // ── Comparison — placeholder ─────────────────────────────────────────────
     comparison: {
-      fatigue: { value: 0, delta: 0 },
-      load:    { value: 0, delta: 0 },
-      stress:  { value: 0, delta: 0 },
+      fatigue: { value: null, delta: null },
+      load:    { value: null, delta: null },
+      stress:  { value: null, delta: null },
     },
 
     // ── AI insight — placeholder until Gemini is wired ──────────────────────
@@ -165,6 +199,23 @@ export function toPlayerProfile(detail: BeltPlayer): PlayerProfileData {
         'Waiting for live biometric data.',
       ],
       readiness: 'High',
+      context: {
+        visualState: 'no-data',
+        selectedBeltId: detail.beltID,
+        snapshotBeltId: null,
+        timestamp: null,
+        analysisTimeLabel: 'No AI analysis yet',
+        ageSinceLastUpdate: null,
+        freshnessLabel: 'No data yet',
+        isStale: false,
+        isInWarmup: false,
+        alertLevel: null,
+        playerState: null,
+        substitutionWindow: null,
+        isUrgent: false,
+        recoveryTimeMin: null,
+        timeToFailMin: null,
+      },
     },
 
     // ── Session stats — placeholder ──────────────────────────────────────────
