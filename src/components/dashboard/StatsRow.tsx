@@ -23,28 +23,28 @@ interface StatCardProps {
 
 const colorSchemes = [
   {
-    primary: '#64748B',
-    secondary: '#334155',
-    accent: '#94A3B8',
-    light: 'rgba(148, 163, 184, 0.08)',
+    primary: '#38BDF8',
+    secondary: '#60A5FA',
+    accent: '#38BDF8',
+    light: 'rgba(56, 189, 248, 0.08)',
   },
   {
-    primary: '#10B981',
-    secondary: '#059669',
-    accent: '#6EE7B7',
-    light: 'rgba(16, 185, 129, 0.08)',
+    primary: '#B6FF2E',
+    secondary: '#4ADE80',
+    accent: '#B6FF2E',
+    light: 'rgba(182, 255, 46, 0.08)',
   },
   {
-    primary: '#F97316',
-    secondary: '#EA580C',
-    accent: '#FDBA74',
-    light: 'rgba(249, 115, 22, 0.08)',
+    primary: '#FFB800',
+    secondary: '#FACC15',
+    accent: '#FFB800',
+    light: 'rgba(255, 184, 0, 0.08)',
   },
   {
-    primary: '#EF4444',
-    secondary: '#DC2626',
-    accent: '#FCA5A5',
-    light: 'rgba(239, 68, 68, 0.08)',
+    primary: '#FF5A5F',
+    secondary: '#FF6B6B',
+    accent: '#FF5A5F',
+    light: 'rgba(255, 90, 95, 0.08)',
   },
 ];
 
@@ -112,26 +112,29 @@ const StatCard: React.FC<StatCardProps> = ({
         <div
           className="absolute inset-0 rounded-2xl blur-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 -z-10"
           style={{
-            background: `radial-gradient(circle, ${colorScheme.primary}15, transparent 70%)`,
+            background: `radial-gradient(circle, ${colorScheme.primary}18, transparent 70%)`,
           }}
         />
 
         <div
           className="relative overflow-hidden rounded-2xl border backdrop-blur-md transition-all duration-300"
           style={{
-            background: 'rgba(15, 23, 42, 0.6)',
-            borderColor: isHovered ? `${colorScheme.primary}40` : `${colorScheme.primary}20`,
-            borderWidth: '1px',
+            background: `linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.024) 48%, ${colorScheme.light}), rgba(11,18,32,0.72)`,
+            borderColor: isHovered ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.08)',
+            borderWidth: '0.5px',
+            borderRadius: '24px',
+            backdropFilter: 'blur(18px) saturate(128%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(128%)',
             boxShadow: isHovered
               ? `
-                0 0 15px ${colorScheme.primary}25,
-                0 8px 24px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05)
+                0 30px 84px rgba(0,0,0,0.50),
+                0 0 20px ${colorScheme.primary}0E,
+                inset 0 1px 0 rgba(255,255,255,0.11)
               `
               : `
-                0 0 8px ${colorScheme.primary}15,
-                0 4px 12px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.03)
+                0 24px 70px rgba(0,0,0,0.42),
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 -1px 0 rgba(255,255,255,0.025)
               `,
           }}
           onMouseMove={handleMouseMove}
@@ -141,7 +144,7 @@ const StatCard: React.FC<StatCardProps> = ({
             <div
               className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500"
               style={{
-                background: `radial-gradient(circle at top right, ${colorScheme.primary}, transparent)`,
+                background: `radial-gradient(circle at top right, ${colorScheme.primary}66, transparent 66%)`,
               }}
             />
 
@@ -152,7 +155,7 @@ const StatCard: React.FC<StatCardProps> = ({
                 }}
                 transition={{ duration: 0.3 }}
                 className="text-xs font-semibold tracking-wide uppercase"
-                style={{ fontFamily: font.body, letterSpacing: '0.05em' }}
+                style={{ fontFamily: font.body, letterSpacing: '0.12em' }}
               >
                 {label}
               </motion.span>
@@ -167,9 +170,10 @@ const StatCard: React.FC<StatCardProps> = ({
                 transition={{ duration: 0.3 }}
                 className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                 style={{
-                  background: colorScheme.light,
-                  border: `1.5px solid ${colorScheme.primary}30`,
+                  background: `linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025)), ${colorScheme.light}`,
+                  border: `0.5px solid ${colorScheme.primary}2E`,
                   color: colorScheme.primary,
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 20px rgba(0,0,0,0.18)',
                 }}
               >
                 {icon}
@@ -181,16 +185,19 @@ const StatCard: React.FC<StatCardProps> = ({
                 textShadow: isHovered
                   ? `0 0 12px ${colorScheme.primary}30`
                   : `0 0 0px transparent`,
-                color: isHovered ? '#F8FAFC' : '#E2E8F0',
+                color: isHovered ? '#F8FAFC' : 'rgba(255,255,255,0.92)',
               }}
               transition={{ duration: 0.3 }}
               className="text-4xl font-bold mb-2 relative z-20"
-              style={{ fontFamily: font.display, lineHeight: 1 }}
+              style={{ fontFamily: font.mono, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}
             >
               {value}
             </motion.div>
 
-            <div className="text-xs text-slate-400 mb-3 relative z-20 group-hover:text-slate-300 transition-colors duration-300">
+            <div
+              className="text-xs mb-3 relative z-20 transition-colors duration-300"
+              style={{ color: isHovered ? 'rgba(255,255,255,0.70)' : 'rgba(255,255,255,0.45)' }}
+            >
               {sub}
             </div>
           </div>

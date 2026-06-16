@@ -18,13 +18,14 @@ interface UseCoachPlayersReturn {
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
-export function useCoachPlayers(): UseCoachPlayersReturn {
+export function useCoachPlayers(coachNameOverride?: string): UseCoachPlayersReturn {
   const [players, setPlayers] = useState<Player[]>([]); 
   const [loading, setLoading] = useState(true);
   const [error,   setError  ] = useState<string | null>(null);
 
   // Read coach name once from the JWT — stays stable across renders
-  const coachName = extractUserFromToken();
+  const tokenCoachName = extractUserFromToken();
+  const coachName = (coachNameOverride ?? tokenCoachName).trim();
 
   const fetchPlayers = useCallback(async () => {
     setLoading(true);
