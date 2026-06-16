@@ -1,9 +1,7 @@
 'use client';
 
 import React from 'react';
-import { StatItem, StatLevel } from './StatItem';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface SessionStats {
   distance:      number;    // km
   topSpeed:      number;    // km/h
@@ -16,114 +14,29 @@ interface BottomStatsBarProps {
   stats: SessionStats;
 }
 
-// ─── Icon components ──────────────────────────────────────────────────────────
-const IconShoe = () => (
+const IconUsers = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 18l2-6h16l2 6H2z"/><path d="M4 12l2-6h8l2 6"/>
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </svg>
 );
 
-const IconBolt = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-  </svg>
-);
-
-const IconRun = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="13" cy="4" r="1.5"/>
-    <path d="M9 20l2-5 3 3 2-8"/>
-    <path d="M6 12l3-1 2 4"/>
-    <path d="M15 8l2 4-4 1"/>
-  </svg>
-);
-
-const IconAccel = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-  </svg>
-);
-
-const IconFire = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8.5 14.5A3.5 3.5 0 0 0 12 18c4 0 6-3 6-6 0-5-3-8-6-10 0 4-3 5-3.5 8.5z"/>
-    <path d="M12 18c0 1.657-1.343 3-3 3S6 19.657 6 18c0-2 1.5-3.5 3-4 .5 1.5 3 2 3 4z"/>
-  </svg>
-);
-
-// ─── Level helpers ────────────────────────────────────────────────────────────
-const distLevel  = (v: number): StatLevel => v >= 8  ? 'HIGH' : v >= 4  ? 'NORMAL' : 'LOW';
-const speedLevel = (v: number): StatLevel => v >= 25 ? 'HIGH' : v >= 15 ? 'NORMAL' : 'LOW';
-const sprintLevel= (v: number): StatLevel => v >= 15 ? 'HIGH' : v >= 8  ? 'NORMAL' : 'LOW';
-const accelLevel = (v: number): StatLevel => v >= 20 ? 'HIGH' : v >= 10 ? 'NORMAL' : 'LOW';
-const calLevel   = (v: number): StatLevel => v >= 700? 'HIGH' : v >= 400? 'NORMAL' : 'LOW';
-
-// ─── Divider ──────────────────────────────────────────────────────────────────
-const Divider = () => (
-  <div style={{
-    width: '0.5px', alignSelf: 'stretch',
-    background: 'linear-gradient(to bottom, transparent, var(--vl-border), transparent)',
-    flexShrink: 0,
-  }} aria-hidden />
-);
-
-// ─── Component ────────────────────────────────────────────────────────────────
 export const BottomStatsBar: React.FC<BottomStatsBarProps> = ({ stats }) => {
-  const items = [
-    {
-      label: 'Total Distance',
-      value: stats.distance,
-      unit:  'km',
-      level: distLevel(stats.distance),
-      icon:  <IconShoe />,
-    },
-    {
-      label: 'Top Speed',
-      value: stats.topSpeed,
-      unit:  'km/h',
-      level: speedLevel(stats.topSpeed),
-      icon:  <IconBolt />,
-    },
-    {
-      label: 'Sprints',
-      value: stats.sprints,
-      level: sprintLevel(stats.sprints),
-      icon:  <IconRun />,
-    },
-    {
-      label: 'Accelerations',
-      value: stats.accelerations,
-      level: accelLevel(stats.accelerations),
-      icon:  <IconAccel />,
-    },
-    {
-      label: 'Calories',
-      value: stats.calories,
-      unit:  'kcal',
-      level: calLevel(stats.calories),
-      icon:  <IconFire />,
-    },
-  ];
+  void stats;
 
   return (
     <section className="vl-bsb" aria-label="Session statistics">
-      {items.map((item, i) => (
-        <React.Fragment key={item.label}>
-          <StatItem
-            label={item.label}
-            value={item.value}
-            unit={item.unit}
-            level={item.level as StatLevel}
-            icon={item.icon}
-          />
-          {i < items.length - 1 && <Divider />}
-        </React.Fragment>
-      ))}
+      <div className="vl-bsb-banner">
+        <div className="vl-bsb-icon" aria-hidden>
+          <IconUsers />
+        </div>
+        <p className="vl-bsb-copy">
+          Trusted by <span>10,000+</span> athletes and coaches worldwide using VitaLink to monitor performance in real time.
+        </p>
+      </div>
 
       <style>{`
         .vl-bsb {
@@ -134,7 +47,7 @@ export const BottomStatsBar: React.FC<BottomStatsBarProps> = ({ stats }) => {
           padding: 16px 20px;
           background:
             linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.024) 50%),
-            rgba(11,18,32,0.72);
+            rgba(11,14,20,0.72);
           border: 0.5px solid var(--vl-border);
           border-radius: 28px;
           backdrop-filter: blur(18px) saturate(128%);
@@ -152,17 +65,51 @@ export const BottomStatsBar: React.FC<BottomStatsBarProps> = ({ stats }) => {
         }
         .vl-bsb::-webkit-scrollbar { display: none; }
 
-        /* Space the items evenly */
-        .vl-bsb > .vl-si {
-          flex: 1;
-          min-width: 100px;
-          padding: 0 16px;
+        .vl-bsb-banner {
+          position: relative;
+          z-index: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+          width: 100%;
+          min-width: 100%;
         }
-        .vl-bsb > .vl-si:first-child { padding-left: 0; }
-        .vl-bsb > .vl-si:last-child  { padding-right: 0; }
+        .vl-bsb-icon {
+          display: grid;
+          place-items: center;
+          width: 36px;
+          height: 36px;
+          flex: 0 0 36px;
+          color: #CCFF00;
+          background: rgba(204,255,0,0.10);
+          border: 0.5px solid rgba(204,255,0,0.34);
+          border-radius: 18px;
+          box-shadow: 0 0 18px rgba(204,255,0,0.10);
+        }
+        .vl-bsb-copy {
+          margin: 0;
+          color: rgba(255,255,255,0.84);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 15px;
+          font-weight: 500;
+          line-height: 1.4;
+          text-align: center;
+          min-width: 0;
+        }
+        .vl-bsb-copy span {
+          color: #CCFF00;
+          font-family: 'Barlow Condensed', sans-serif;
+          font-size: 20px;
+          font-weight: 700;
+          letter-spacing: 0;
+        }
 
         @media (max-width: 700px) {
-          .vl-bsb > .vl-si { min-width: 80px; padding: 0 10px; }
+          .vl-bsb-banner {
+            justify-content: center;
+            min-width: 100%;
+          }
         }
       `}</style>
     </section>
