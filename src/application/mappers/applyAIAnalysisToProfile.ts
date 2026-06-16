@@ -12,6 +12,10 @@ import {
   isWaitingState,
 } from '@/domain/types/ai.types';
 import { ClientStatus } from '@/application/utils/statusLayer';
+import {
+  formatPlayerState,
+  normalizePlayerState,
+} from '@/application/utils/playerState';
 
 interface AIProfileOverlayInput {
   recommendation: AIRecommendation | null;
@@ -402,16 +406,12 @@ function isCriticalAlert(alertLevel: string): boolean {
   return alertLevel === AlertLevel.CRITICAL;
 }
 
-function isDepletedState(state: string | null): boolean {
-  return normalizeState(state) === PlayerState.DEPLETED;
+function isDepletedState(state: PlayerState | null): boolean {
+  return normalizePlayerState(state) === PlayerState.DEPLETED;
 }
 
-function isInactiveState(state: string | null): boolean {
-  return normalizeState(state) === PlayerState.INACTIVE;
-}
-
-function normalizeState(state: string | null): string | null {
-  return state ? state.trim().toUpperCase().replace(/\s+/g, '_') : null;
+function isInactiveState(state: PlayerState | null): boolean {
+  return normalizePlayerState(state) === PlayerState.INACTIVE;
 }
 
 function normalizeAlertLevel(alertLevel: string): string {
@@ -420,11 +420,6 @@ function normalizeAlertLevel(alertLevel: string): string {
 
 function formatAlertLevel(alertLevel: string): string {
   return alertLevel.replace(/_/g, ' ');
-}
-
-function formatPlayerState(state: string | null): string | null {
-  if (state === null) return null;
-  return state.replace(/_/g, ' ');
 }
 
 function formatAnalysisTime(ai: AIRecommendation): string {

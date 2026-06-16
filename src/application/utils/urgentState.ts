@@ -1,4 +1,5 @@
 import { AlertLevel, PlayerState } from '@/domain/types/ai.types';
+import { normalizePlayerState } from '@/application/utils/playerState';
 
 /**
  * Urgent System State
@@ -11,6 +12,6 @@ export function isUrgentState(
   playerState: PlayerState | null
 ): boolean {
   if (alertLevel === AlertLevel.CRITICAL) return true;
-  if (playerState?.trim().toUpperCase().replace(/\s+/g, '_') === PlayerState.DEPLETED) return true;
+  if (normalizePlayerState(playerState) === PlayerState.DEPLETED) return true;
   return false;
 }

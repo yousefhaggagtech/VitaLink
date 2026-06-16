@@ -5,7 +5,7 @@ export const PlayerState = {
   DEPLETED: 'DEPLETED',
 } as const;
 
-export type PlayerState = string;
+export type PlayerState = string | number;
 
 export const AlertLevel = {
   WARMUP: 'WARMUP',

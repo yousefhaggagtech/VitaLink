@@ -111,7 +111,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
       className={`vl2-card${isCritical ? ' is-critical' : ''}`}
       onClick={() => {
         // Navigate to player profile with beltId as query param
-        const targetUrl = `/coach/${coachName}/player/${encodeURIComponent(player.name)}?beltId=${encodeURIComponent(player.beltId ?? '')}`;
+        const targetUrl = `/coach/${encodeURIComponent(coachName)}/player/${encodeURIComponent(player.name)}?beltId=${encodeURIComponent(player.beltId ?? '')}`;
         router.push(targetUrl);
       }}
       onPointerMove={onMove} onPointerLeave={onLeave}

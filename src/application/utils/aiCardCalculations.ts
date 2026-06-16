@@ -4,6 +4,7 @@ import {
   PlayerState,
 } from '@/domain/types/ai.types';
 import { UI_THRESHOLDS } from '@/domain/constants';
+import { normalizePlayerState } from '@/application/utils/playerState';
 
 // ═══════════════════════════════════════════════════════
 // Wellness Score
@@ -11,6 +12,7 @@ import { UI_THRESHOLDS } from '@/domain/constants';
 // ═══════════════════════════════════════════════════════
 export function calculateWellnessScore(ai: AIRecommendation): number {
   let score = 100;
+  const playerState = normalizePlayerState(ai.status.playerState);
 
   // Recovery time penalty
   if (ai.metrics.recoveryTimeMin !== null) {
@@ -18,8 +20,8 @@ export function calculateWellnessScore(ai: AIRecommendation): number {
   }
 
   // Player state penalties
-  if (ai.status.playerState === PlayerState.DEPLETED) score -= 40;
-  if (ai.status.playerState === PlayerState.INACTIVE) score -= 20;
+  if (playerState === PlayerState.DEPLETED) score -= 40;
+  if (playerState === PlayerState.INACTIVE) score -= 20;
 
   // Alert level penalties
   if (ai.status.alertLevel === AlertLevel.WARNING) score -= 25;
@@ -80,10 +82,11 @@ export function calculateStress(ai: AIRecommendation): number {
   if (ai.isInWarmup) return 0;
 
   let stress = 0;
+  const playerState = normalizePlayerState(ai.status.playerState);
 
   if (ai.status.alertLevel === AlertLevel.WARNING) stress += 30;
   if (ai.status.alertLevel === AlertLevel.CRITICAL) stress += 60;
-  if (ai.status.playerState === PlayerState.DEPLETED) stress += 40;
+  if (playerState === PlayerState.DEPLETED) stress += 40;
   if (ai.metrics.crampRisk !== null) {
     stress += ai.metrics.crampRisk * 0.3;
   }

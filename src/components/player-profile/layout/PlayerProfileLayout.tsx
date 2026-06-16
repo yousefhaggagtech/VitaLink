@@ -6,7 +6,6 @@ import { PlayerTopBar }  from '@/components/player-profile/layout/PlayerTopBar';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface PlayerProfileLayoutProps {
-  playerId:   string;
   coachName:  string;
   children:   React.ReactNode;
   date?:      string;
@@ -16,7 +15,6 @@ interface PlayerProfileLayoutProps {
 
 // ─── Component ─────────────────────────────────────────────────────────────
 export const PlayerProfileLayout: React.FC<PlayerProfileLayoutProps> = ({
-  playerId,
   coachName,
   children,
   date,
@@ -28,7 +26,6 @@ export const PlayerProfileLayout: React.FC<PlayerProfileLayoutProps> = ({
 
       {/* Fixed left sidebar */}
       <PlayerSidebar
-        playerId={playerId}
         coachName={coachName}
       />
 

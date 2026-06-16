@@ -128,8 +128,10 @@ export function useSignalRConnection(
       latestOptionsRef.current.onConnectionEstablished?.();
     } catch (error) {
       const err = error instanceof Error ? error : new Error("Connection failed");
+      const isCurrentAttempt =
+        connectionRunRef.current === runId && connectionRef.current === hub;
 
-      if (connectionRunRef.current === runId && connectionRef.current === hub) {
+      if (isCurrentAttempt) {
         connectionRef.current = null;
         isConnectingRef.current = false;
         setConnection(null);
@@ -137,9 +139,8 @@ export function useSignalRConnection(
         setIsConnected(false);
         setLastError(err);
         latestOptionsRef.current.onConnectionFailed?.(err);
+        console.error("SignalR connection failed:", err);
       }
-
-      console.error("SignalR connection failed:", err);
     }
   }, []);
 
@@ -154,7 +155,7 @@ export function useSignalRConnection(
     setIsConnecting(false);
     setIsConnected(false);
 
-    if (hub) {
+    if (hub && hub.state !== signalR.HubConnectionState.Connecting) {
       hubServiceRef.current.disconnectHub(hub);
     }
   }, []);
