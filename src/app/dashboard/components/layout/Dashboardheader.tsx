@@ -16,6 +16,7 @@ interface DashboardHeaderProps {
   onThemeToggle: () => void;
   onDataModeChange: (mode: DataMode) => void;
   onClearData: () => void;
+  isDemo?: boolean;
 }
  
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -29,6 +30,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onThemeToggle,
   onDataModeChange,
   onClearData,
+  isDemo = false,
 }) => {
   const accent = theme.accent.primary;
   const isDark = theme.name === "Lime Dark";
@@ -116,7 +118,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               maxWidth: "620px",
             }}
           >
-            Precision Monitoring for Elite Health Performance
+            {isDemo
+              ? "Explore VitaLink Through an Interactive Simulation"
+              : "Precision Monitoring for Elite Health Performance"}
           </h1>
  
           <p
@@ -128,8 +132,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               maxWidth: "520px",
             }}
           >
-            Track real-time biometrics with intelligent insights for optimal
-            performance.
+            {isDemo
+              ? "Preview realistic biometric cards, AI insights, and performance trends generated entirely in your browser."
+              : "Track real-time biometrics with intelligent insights for optimal performance."}
           </p>
  
           <p
@@ -150,7 +155,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             >
               {username}
             </span>{" "}
-            — Real-Time Biometric Monitoring
+            {isDemo
+              ? " — Public Simulation Preview"
+              : " — Real-Time Biometric Monitoring"}
           </p>
         </div>
       </div>

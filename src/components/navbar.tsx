@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/how-it-works", label: "Technology" },
-  { href: "/dashboard", label: "Performance" },
+  { href: "/simulation", label: "Simulation" },
 ];
 
 export default function NavBar() {
