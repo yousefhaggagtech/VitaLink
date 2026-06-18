@@ -1,8 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PlayerSidebar } from '@/components/player-profile/layout/PlayerSidebar';
 import { PlayerTopBar }  from '@/components/player-profile/layout/PlayerTopBar';
+import {
+  PlayerSettings,
+  PlayerSettingsModal,
+} from '@/components/player-profile/layout/PlayerSettingsModal';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface PlayerProfileLayoutProps {
@@ -11,6 +15,11 @@ interface PlayerProfileLayoutProps {
   date?:      string;
   onExportReport?: () => void | Promise<void>;
   isExportingReport?: boolean;
+  playerName?: string;
+  playerInitials?: string;
+  jerseyNumber?: number;
+  beltId?: string;
+  isTelemetryConnected?: boolean;
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────
@@ -20,7 +29,24 @@ export const PlayerProfileLayout: React.FC<PlayerProfileLayoutProps> = ({
   date,
   onExportReport,
   isExportingReport = false,
+  playerName = 'Player',
+  playerInitials = 'P',
+  jerseyNumber,
+  beltId = '',
+  isTelemetryConnected = true,
 }) => {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [playerSettings, setPlayerSettings] = useState<PlayerSettings>(() => ({
+    playerName,
+    registeredId: [
+      jerseyNumber ? `Jersey #${jerseyNumber}` : '',
+      beltId ? `Belt ${beltId}` : '',
+    ].filter(Boolean).join(' · ') || 'Not assigned',
+    realtimeAlerts: true,
+    weeklyReports: false,
+    hardwareSync: true,
+  }));
+
   return (
     <div className="vl-layout">
 
@@ -29,6 +55,8 @@ export const PlayerProfileLayout: React.FC<PlayerProfileLayoutProps> = ({
         coachName={coachName}
         onExportReport={onExportReport}
         isExportingReport={isExportingReport}
+        onSettingsClick={() => setIsSettingsOpen(true)}
+        isSettingsOpen={isSettingsOpen}
       />
 
       {/* Scrollable right area */}
@@ -40,6 +68,15 @@ export const PlayerProfileLayout: React.FC<PlayerProfileLayoutProps> = ({
           {children}
         </div>
       </div>
+
+      <PlayerSettingsModal
+        isOpen={isSettingsOpen}
+        initials={playerInitials}
+        isConnected={isTelemetryConnected}
+        initialSettings={playerSettings}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={setPlayerSettings}
+      />
 
       <style>{`
         /* ── Root ────────────────────────────── */

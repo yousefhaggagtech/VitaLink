@@ -230,6 +230,11 @@ export function PlayerProfileClient({ coachName, beltId }: PlayerProfileClientPr
         coachName={coachName}
         onExportReport={handleExportReport}
         isExportingReport={isExportingReport}
+        playerName={p.name}
+        playerInitials={p.initials}
+        jerseyNumber={p.jerseyNumber}
+        beltId={p.beltId}
+        isTelemetryConnected
       >
         {/* ── 1. Hero ─────────────────────────────────────────────────── */}
         <PlayerHero

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  Download, Settings, ChevronDown, LoaderCircle,
+  Download, Settings, LoaderCircle,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -12,6 +12,8 @@ interface PlayerSidebarProps {
   avatarInitials?: string;
   onExportReport?: () => void | Promise<void>;
   isExportingReport?: boolean;
+  onSettingsClick?: () => void;
+  isSettingsOpen?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -21,9 +23,9 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
   avatarInitials,
   onExportReport,
   isExportingReport = false,
+  onSettingsClick,
+  isSettingsOpen = false,
 }) => {
-  const [profileOpen, setProfileOpen] = useState(false);
-
   const initials = avatarInitials
     ?? coachName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
@@ -58,30 +60,28 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
           <span>{isExportingReport ? 'Exporting...' : 'Export Report'}</span>
         </button>
 
-        <button className="vl-sb__util-btn" type="button">
+        <button
+          className={`vl-sb__util-btn${isSettingsOpen ? ' vl-sb__util-btn--active' : ''}`}
+          type="button"
+          onClick={onSettingsClick}
+          aria-haspopup="dialog"
+          aria-expanded={isSettingsOpen}
+        >
           <span className="vl-sb__icon"><Settings size={15} /></span>
           <span>Settings</span>
         </button>
       </div>
 
       {/* Coach profile */}
-      <button
+      <div
         className="vl-sb__coach"
-        onClick={() => setProfileOpen(o => !o)}
-        aria-expanded={profileOpen}
       >
         <div className="vl-sb__coach-av">{initials}</div>
         <div className="vl-sb__coach-info">
           <span className="vl-sb__coach-name">{coachName}</span>
           <span className="vl-sb__coach-role">{coachRole}</span>
         </div>
-        <ChevronDown size={13} style={{
-          color: 'var(--vl-muted-deep)',
-          transform: profileOpen ? 'rotate(180deg)' : 'none',
-          transition: 'transform .2s',
-          flexShrink: 0,
-        }}/>
-      </button>
+      </div>
 
       <style>{`
         /* ── Shell ───────────────────────────── */
@@ -162,7 +162,7 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
           font-family: 'DM Sans', sans-serif;
           font-size: 12px; font-weight: 500;
           color: var(--vl-muted-deep);
-          cursor: pointer; width: 100%; text-align: left;
+          cursor: default; width: 100%; text-align: left;
           transition: color .18s, background .18s, border-color .18s;
           border: 0.5px solid transparent;
         }
@@ -170,6 +170,15 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
           color: var(--vl-muted);
           background: rgba(255,255,255,0.035);
           border-color: rgba(255,255,255,0.06);
+        }
+        .vl-sb__util-btn--active {
+          color: var(--vl-lime);
+          background: rgba(182,255,46,0.07);
+          border-color: rgba(182,255,46,0.16);
+        }
+        .vl-sb__util-btn:focus-visible {
+          outline: 2px solid rgba(182,255,46,0.72);
+          outline-offset: 2px;
         }
         .vl-sb__util-btn:disabled {
           cursor: wait;

@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Calendar, MoreHorizontal, ChevronDown } from 'lucide-react';
+import React from 'react';
+import { Calendar } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PlayerTopBarProps {
-  date?:          string;
-  onMore?:        () => void;
+  date?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -20,9 +19,7 @@ const formatDate = (d?: string) => {
 // ─── Component ────────────────────────────────────────────────────────────────
 export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
   date,
-  onMore,
 }) => {
-  const [dateOpen, setDateOpen] = useState(false);
   const label = `Today, ${formatDate(date)}`;
 
   return (
@@ -31,31 +28,13 @@ export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
       {/* Spacer — keeps buttons right-aligned */}
       <div style={{ flex: 1 }} />
 
-      {/* ── Date picker ── */}
-      <button
+      {/* ── Date ── */}
+      <div
         className="vl-topbar__btn vl-topbar__btn--date"
-        onClick={() => setDateOpen(o => !o)}
-        aria-expanded={dateOpen}
-        aria-label="Select date"
       >
         <Calendar size={13} style={{ color: 'var(--vl-muted)', flexShrink: 0 }} />
         <span className="vl-topbar__date-text">{label}</span>
-        <ChevronDown size={11} style={{
-          color: 'var(--vl-muted-deep)',
-          transform: dateOpen ? 'rotate(180deg)' : 'none',
-          transition: 'transform .2s',
-        }}/>
-      </button>
-
-      {/* ── More ── */}
-      <button
-        className="vl-topbar__btn vl-topbar__btn--icon"
-        onClick={onMore}
-        aria-label="More options"
-        title="More options"
-      >
-        <MoreHorizontal size={14} />
-      </button>
+      </div>
 
       <style>{`
         /* ── Bar ─────────────────────────────── */
@@ -82,7 +61,7 @@ export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
           border: 0.5px solid var(--vl-border);
           border-radius: 12px;
           padding: 7px 12px;
-          cursor: pointer;
+          cursor: default;
           white-space: nowrap;
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 26px rgba(0,0,0,0.18);
           backdrop-filter: blur(18px) saturate(128%);
@@ -105,12 +84,6 @@ export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
           font-weight: 500; color: var(--vl-text);
         }
 
-        /* Icon-only buttons */
-        .vl-topbar__btn--icon {
-          padding: 7px 9px;
-          color: var(--vl-muted-deep);
-        }
-        .vl-topbar__btn--icon:hover { color: var(--vl-muted); }
       `}</style>
     </header>
   );

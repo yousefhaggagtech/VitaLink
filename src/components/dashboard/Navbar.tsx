@@ -1,7 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/app/features/auth/hooks/useAuth';
+import {
+  CoachSettings,
+  CoachSettingsModal,
+} from '@/components/dashboard/CoachSettingsModal';
 
 interface NavbarProps {
   coachName: string;
@@ -10,11 +14,18 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ coachName, latency = 32 }) => {
   const { logout } = useAuth();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [coachSettings, setCoachSettings] = useState<CoachSettings>({
+    notificationsEnabled: true,
+    syncSystemTheme: true,
+    defaultTeamView: 'all-athletes',
+  });
 
   const latencyColor = latency < 50 ? '#B6FF2E' : latency < 120 ? '#FFB800' : '#FF5A5F';
 
   return (
-    <nav className="vl2-nav">
+    <>
+      <nav className="vl2-nav">
 
       {/* ── Left: Brand ── */}
       <div className="vl2-nav__brand">
@@ -50,7 +61,13 @@ export const Navbar: React.FC<NavbarProps> = ({ coachName, latency = 32 }) => {
       <div className="vl2-nav__actions">
 
         {/* Coach card */}
-        <div className="vl2-coach-card">
+        <button
+          type="button"
+          className="vl2-coach-card"
+          onClick={() => setIsSettingsOpen(true)}
+          aria-label={`Open settings for ${coachName}`}
+          aria-haspopup="dialog"
+        >
           <div className="vl2-coach-av">
             {coachName.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}
           </div>
@@ -62,7 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({ coachName, latency = 32 }) => {
             stroke="rgba(255,255,255,0.28)" strokeWidth="1.5" strokeLinecap="round">
             <path d="M2 4 L5 7 L8 4"/>
           </svg>
-        </div>
+        </button>
 
         <button onClick={logout} className="vl2-logout-btn">Logout</button>
       </div>
@@ -126,6 +143,9 @@ export const Navbar: React.FC<NavbarProps> = ({ coachName, latency = 32 }) => {
 
         .vl2-coach-card {
           display: flex; align-items: center; gap: 8px;
+          font-family: inherit;
+          text-align: left;
+          color: inherit;
           background:
             linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025)),
             rgba(11,18,32,0.70);
@@ -142,6 +162,10 @@ export const Navbar: React.FC<NavbarProps> = ({ coachName, latency = 32 }) => {
             rgba(11,18,32,0.78);
           border-color: var(--vl-border-strong, rgba(255,255,255,0.14));
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 16px 36px rgba(0,0,0,0.24);
+        }
+        .vl2-coach-card:focus-visible {
+          outline: 2px solid rgba(182,255,46,0.72);
+          outline-offset: 2px;
         }
 
         .vl2-coach-av {
@@ -187,6 +211,15 @@ export const Navbar: React.FC<NavbarProps> = ({ coachName, latency = 32 }) => {
           .vl2-coach-meta { display: block; }
         }
       `}</style>
-    </nav>
+      </nav>
+
+      <CoachSettingsModal
+        isOpen={isSettingsOpen}
+        coachName={coachName}
+        initialSettings={coachSettings}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={setCoachSettings}
+      />
+    </>
   );
 };
