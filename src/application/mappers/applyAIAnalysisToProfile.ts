@@ -17,7 +17,7 @@ import {
   normalizePlayerState,
 } from '@/application/utils/playerState';
 
-interface AIProfileOverlayInput {
+export interface AIProfileOverlayInput {
   recommendation: AIRecommendation | null;
   rawResponse?: AIResponse | null;
   waitingState?: { message: string; hint: string } | null;
@@ -27,12 +27,63 @@ interface AIProfileOverlayInput {
   error?: string | null;
 }
 
+export interface AIAnalysisDisplayMetrics {
+  recommendation: AIRecommendation | null;
+  effectiveAlert: string | null;
+  visualState: ProfileAIVisualState;
+  areMetricsDisplayable: boolean;
+  crampRisk: number | null;
+  power: number | null;
+  momentum: number | null;
+}
+
+export function getAIAnalysisDisplayMetrics(
+  selectedBeltId: string,
+  aiState: AIProfileOverlayInput
+): AIAnalysisDisplayMetrics {
+  const raw = aiState.rawResponse ?? null;
+  const current = raw && isRecommendation(raw) ? raw : null;
+  const waiting = raw && isWaitingState(raw) ? raw : null;
+
+  if (waiting || aiState.waitingState) {
+    return emptyDisplayMetrics(aiState.isLoading ? 'loading' : 'no-data');
+  }
+
+  if (aiState.isError) {
+    return emptyDisplayMetrics('error');
+  }
+
+  const ai = current ?? aiState.recommendation;
+
+  if (!ai) {
+    return emptyDisplayMetrics(aiState.isLoading ? 'loading' : 'no-data');
+  }
+
+  const beltMatches = sameBelt(ai.beltId, selectedBeltId);
+  const effectiveAlert = getEffectiveAlert(ai, aiState.clientStatus);
+  const visualState = getVisualState({
+    beltMatches,
+    effectiveAlert,
+    clientStatus: aiState.clientStatus,
+  });
+  const metricsAreDisplayable = beltMatches && visualState !== 'stale';
+
+  return {
+    recommendation: ai,
+    effectiveAlert,
+    visualState,
+    areMetricsDisplayable: metricsAreDisplayable,
+    crampRisk: metricsAreDisplayable ? toPercent(ai.metrics.crampRisk) : null,
+    power: metricsAreDisplayable ? toPercent(ai.metrics.power) : null,
+    momentum: metricsAreDisplayable ? toPercent(ai.metrics.momentum) : null,
+  };
+}
+
 export function applyAIAnalysisToProfile(
   profile: PlayerProfileData,
   aiState: AIProfileOverlayInput
 ): PlayerProfileData {
   const raw = aiState.rawResponse ?? null;
-  const current = raw && isRecommendation(raw) ? raw : null;
   const waiting = raw && isWaitingState(raw) ? raw : null;
 
   if (waiting || aiState.waitingState) {
@@ -70,7 +121,8 @@ export function applyAIAnalysisToProfile(
     });
   }
 
-  const ai = current ?? aiState.recommendation;
+  const displayMetrics = getAIAnalysisDisplayMetrics(profile.beltId, aiState);
+  const ai = displayMetrics.recommendation;
 
   if (!ai) {
     const visualState: ProfileAIVisualState = aiState.isLoading ? 'loading' : 'no-data';
@@ -91,19 +143,13 @@ export function applyAIAnalysisToProfile(
     });
   }
 
-  const beltMatches = sameBelt(ai.beltId, profile.beltId);
-  const effectiveAlert = getEffectiveAlert(ai, aiState.clientStatus);
-  const visualState = getVisualState({
-    beltMatches,
-    effectiveAlert,
-    clientStatus: aiState.clientStatus,
-  });
+  const effectiveAlert =
+    displayMetrics.effectiveAlert ?? getEffectiveAlert(ai, aiState.clientStatus);
+  const visualState = displayMetrics.visualState;
   const context = buildAIContext(profile, ai, visualState, effectiveAlert);
-  const metricsAreDisplayable = beltMatches && visualState !== 'stale';
 
-  const crampRisk = metricsAreDisplayable ? toPercent(ai.metrics.crampRisk) : null;
-  const power = metricsAreDisplayable ? toPercent(ai.metrics.power) : null;
-  const momentum = metricsAreDisplayable ? toPercent(ai.metrics.momentum) : null;
+  const { crampRisk, power, momentum } = displayMetrics;
+  const metricsAreDisplayable = displayMetrics.areMetricsDisplayable;
   const wellnessScore = metricsAreDisplayable
     ? getRecoveryReadinessScore(ai, effectiveAlert)
     : null;
@@ -391,6 +437,20 @@ function emptyComparison(): PlayerProfileData['comparison'] {
     fatigue: { value: null, delta: null },
     load: { value: null, delta: null },
     stress: { value: null, delta: null },
+  };
+}
+
+function emptyDisplayMetrics(
+  visualState: ProfileAIVisualState
+): AIAnalysisDisplayMetrics {
+  return {
+    recommendation: null,
+    effectiveAlert: null,
+    visualState,
+    areMetricsDisplayable: false,
+    crampRisk: null,
+    power: null,
+    momentum: null,
   };
 }
 

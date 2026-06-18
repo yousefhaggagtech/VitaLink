@@ -12,6 +12,12 @@ import { LiveSparkline }  from '@/components/ui/LiveSparkLine';
 import { HeartBeat }      from '@/components/ui/HeartBeat';
 import { HydrationDrop }  from '@/components/ui/HydrationDrop';
 import { usePlayerCardRealtime } from '@/application/hooks/usePlayerCardRealtime';
+import { useAIAnalysis } from '@/application/hooks/useAIAnalysis';
+import {
+  getAIAnalysisDisplayMetrics,
+  type AIAnalysisDisplayMetrics,
+} from '@/application/mappers/applyAIAnalysisToProfile';
+import type { ProfileAIVisualState } from '@/application/mappers/toPlayerProfile';
 
 interface PlayerCardProps {
   player:    Player;
@@ -25,11 +31,42 @@ type RowVars  = React.CSSProperties & { '--row-color': string };
 const clamp = (v: number) => Math.max(0, Math.min(100, v));
 
 // ── Insight label — replaces raw % with actionable text ──────────────────────
-const fatigueLabel = (v: number) =>
-  v > 80 ? 'Replace now' : v > 60 ? 'Watch closely' : v > 40 ? 'Building up' : 'Good shape';
+const pendingInsight = (visualState: ProfileAIVisualState) => {
+  if (visualState === 'stale') return 'Stale Data';
+  if (visualState === 'warmup') return 'Warming Up';
+  if (visualState === 'mismatch') return 'Check Belt';
+  if (visualState === 'error') return 'Unavailable';
+  return 'Analyzing';
+};
 
-const stressLabel  = (v: number) =>
-  v > 75 ? 'High load'  : v > 50 ? 'Elevated'    : v > 30 ? 'Manageable'  : 'Calm';
+const crampRiskInsight = (v: number | null, visualState: ProfileAIVisualState) =>
+  v === null ? pendingInsight(visualState) :
+  v > 70 ? 'High Risk' : v > 40 ? 'Elevated' : v > 0 ? 'Low Risk' : 'Pending';
+
+const momentumInsight = (v: number | null, visualState: ProfileAIVisualState) =>
+  v === null ? pendingInsight(visualState) :
+  v > 70 ? 'Surging' : v > 50 ? 'Stable' : v > 30 ? 'Dropping' : 'Fading';
+
+const stateColor = (visualState: ProfileAIVisualState) => {
+  if (visualState === 'stale') return '#FFB800';
+  if (visualState === 'warmup') return '#60A5FA';
+  if (visualState === 'mismatch' || visualState === 'error') return '#FF5A5F';
+  return '#8B5CF6';
+};
+
+const getMetricColors = ({
+  crampRisk,
+  momentum,
+  visualState,
+}: AIAnalysisDisplayMetrics) => ({
+  crampRisk:
+    crampRisk === null ? stateColor(visualState) :
+    crampRisk > 70 ? '#FF5A5F' : crampRisk > 40 ? '#FFB800' : '#B6FF2E',
+  momentum:
+    momentum === null ? stateColor(visualState) :
+    momentum > 70 ? '#B6FF2E' : momentum > 50 ? '#8B5CF6' :
+    momentum > 30 ? '#FFB800' : '#FF5A5F',
+});
 
 const hrLabel = (bpm: number) =>
   bpm > 185 ? 'Max zone' : bpm > 165 ? 'High zone' : bpm > 140 ? 'Active zone' : 'Recovery';
@@ -37,33 +74,39 @@ const hrLabel = (bpm: number) =>
 const LoadRow: React.FC<{
   label:   string;
   insight: string;
-  value:   number;
+  value:   number | null;
   color:   string;
   icon:    React.ReactNode;
-}> = ({ label, insight, value, color, icon }) => (
-  <div className="vl2-load-row" style={{ '--row-color': color } as RowVars}>
-    <div className="vl2-load-left">
-      <span className="vl2-load-icon">{icon}</span>
-      <div>
-        <div className="vl2-load-label">{label}</div>
-        <div className="vl2-load-insight">{insight}</div>
+}> = ({ label, insight, value, color, icon }) => {
+  const safeValue = value === null ? 0 : clamp(value);
+
+  return (
+    <div className="vl2-load-row" style={{ '--row-color': color } as RowVars}>
+      <div className="vl2-load-left">
+        <span className="vl2-load-icon">{icon}</span>
+        <div>
+          <div className="vl2-load-label">{label}</div>
+          <div className="vl2-load-insight">{insight}</div>
+        </div>
       </div>
+      <div className="vl2-load-right">
+        <SegmentedBar
+          value={safeValue}
+          total={14}
+          activeColor={color}
+          inactiveColor="rgba(255,255,255,0.05)"
+          height="clamp(0.38rem,1.45cqw,0.7rem)"
+          gap="clamp(0.13rem,0.55cqw,0.28rem)"
+          rounded="clamp(0.1rem,0.4cqw,0.22rem)"
+          showGlow={false}
+        />
+      </div>
+      <strong className="vl2-load-val">
+        {value === null ? '--' : `${safeValue}%`}
+      </strong>
     </div>
-    <div className="vl2-load-right">
-      <SegmentedBar
-        value={clamp(value)}
-        total={14}
-        activeColor={color}
-        inactiveColor="rgba(255,255,255,0.05)"
-        height="clamp(0.38rem,1.45cqw,0.7rem)"
-        gap="clamp(0.13rem,0.55cqw,0.28rem)"
-        rounded="clamp(0.1rem,0.4cqw,0.22rem)"
-        showGlow={false}
-      />
-    </div>
-    <strong className="vl2-load-val">{clamp(value)}%</strong>
-  </div>
-);
+  );
+};
 
 export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
   const router = useRouter();
@@ -75,13 +118,21 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
     player,
     beltId: player.beltId,
   });
+  const aiAnalysis = useAIAnalysis(player.beltId ?? null);
+  const aiMetrics = getAIAnalysisDisplayMetrics(player.beltId ?? '', {
+    recommendation: aiAnalysis.recommendation,
+    rawResponse: aiAnalysis.rawResponse,
+    waitingState: aiAnalysis.waitingState,
+    clientStatus: aiAnalysis.clientStatus,
+    isLoading: aiAnalysis.isLoading,
+    isError: aiAnalysis.isError,
+    error: aiAnalysis.error,
+  });
 
   const cfg        = statusConfig[player.status];
   const isCritical = player.status === 'critical';
 
-  const fatigueColor = livePlayer.fatigue > 80 ? colors.fatigueHigh
-    : livePlayer.fatigue > 55 ? colors.fatigueMed : colors.athleteCard.green;
-  const stressColor  = livePlayer.stress > 75 ? colors.stressHigh : colors.athleteCard.blue;
+  const metricColors = getMetricColors(aiMetrics);
 
   const vars: CardVars = {
     '--accent':      cfg.color,
@@ -203,13 +254,17 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
       {/* ── LOAD METRICS ── */}
       <section className="vl2-load">
         <LoadRow
-          label="Fatigue" insight={fatigueLabel(livePlayer.fatigue)}
-          value={livePlayer.fatigue} color={fatigueColor}
+          label="Cramp Risk"
+          insight={crampRiskInsight(aiMetrics.crampRisk, aiMetrics.visualState)}
+          value={aiMetrics.crampRisk}
+          color={metricColors.crampRisk}
           icon={<Zap size={16} fill="currentColor" strokeWidth={1.5}/>}
         />
         <LoadRow
-          label="Stress"  insight={stressLabel(livePlayer.stress)}
-          value={livePlayer.stress}  color={stressColor}
+          label="Momentum"
+          insight={momentumInsight(aiMetrics.momentum, aiMetrics.visualState)}
+          value={aiMetrics.momentum}
+          color={metricColors.momentum}
           icon={<Brain size={16} strokeWidth={1.9}/>}
         />
       </section>
