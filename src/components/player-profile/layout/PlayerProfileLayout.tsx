@@ -9,8 +9,6 @@ interface PlayerProfileLayoutProps {
   coachName:  string;
   children:   React.ReactNode;
   date?:      string;
-  onCompare?: () => void;
-  onFilter?:  () => void;
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────
@@ -18,8 +16,6 @@ export const PlayerProfileLayout: React.FC<PlayerProfileLayoutProps> = ({
   coachName,
   children,
   date,
-  onCompare,
-  onFilter,
 }) => {
   return (
     <div className="vl-layout">
@@ -31,11 +27,7 @@ export const PlayerProfileLayout: React.FC<PlayerProfileLayoutProps> = ({
 
       {/* Scrollable right area */}
       <div className="vl-layout__main">
-        <PlayerTopBar
-          date={date}
-          onCompare={onCompare}
-          onFilter={onFilter}
-        />
+        <PlayerTopBar date={date} />
 
         {/* Page content */}
         <div className="vl-layout__content">

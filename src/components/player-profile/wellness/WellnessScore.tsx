@@ -8,7 +8,6 @@ import type { ProfileAIVisualState } from '@/application/mappers/toPlayerProfile
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface WellnessScoreProps {
   score:         number | null;   // recovery readiness from latest AI
-  onViewDetails?: () => void;
   visualState?: ProfileAIVisualState;
   recoveryTimeMin?: number | null;
   freshnessLabel?: string;
@@ -62,14 +61,35 @@ const getScoreConfig = (
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
+const getTelemetryStatus = (visualState: ProfileAIVisualState) => {
+  switch (visualState) {
+    case 'live':
+      return { label: 'Live telemetry connected', state: 'live' };
+    case 'updating':
+      return { label: 'Refreshing AI insights...', state: 'active' };
+    case 'warmup':
+      return { label: 'Calibrating device stream...', state: 'active' };
+    case 'stale':
+      return { label: 'Waiting for device stream...', state: 'waiting' };
+    case 'error':
+      return { label: 'Device stream unavailable', state: 'offline' };
+    case 'mismatch':
+      return { label: 'Verifying device stream...', state: 'waiting' };
+    case 'loading':
+    case 'no-data':
+    default:
+      return { label: 'Fetching live telemetry...', state: 'active' };
+  }
+};
+
 export const WellnessScore: React.FC<WellnessScoreProps> = ({
   score,
-  onViewDetails,
   visualState = 'no-data',
   recoveryTimeMin,
   freshnessLabel,
 }) => {
   const cfg = getScoreConfig(score, visualState, recoveryTimeMin, freshnessLabel);
+  const telemetry = getTelemetryStatus(visualState);
 
   return (
     <div className="vl-ws">
@@ -98,14 +118,23 @@ export const WellnessScore: React.FC<WellnessScoreProps> = ({
         </div>
       </div>
 
-      {/* ── CTA ── */}
-      <button
-        className="vl-ws__btn"
-        onClick={onViewDetails}
-        aria-label="View wellness details"
+      {/* ── Live AI telemetry ── */}
+      <div
+        className="vl-ws__telemetry"
+        data-state={telemetry.state}
+        role="status"
+        aria-live="polite"
       >
-        VIEW DETAILS
-      </button>
+        <div
+          className="vl-ws__telemetry-track"
+          role="progressbar"
+          aria-label="Live AI insights telemetry"
+          aria-valuetext={telemetry.label}
+        >
+          <span className="vl-ws__telemetry-flow" />
+        </div>
+        <span className="vl-ws__telemetry-label">{telemetry.label}</span>
+      </div>
 
       <style>{`
         /* ── Card ────────────────────────────── */
@@ -200,31 +229,128 @@ export const WellnessScore: React.FC<WellnessScoreProps> = ({
           margin: 0;
         }
 
-        /* ── CTA ─────────────────────────────── */
-        .vl-ws__btn {
+        /* ── Live AI telemetry ───────────────── */
+        .vl-ws__telemetry {
+          box-sizing: border-box;
           width: 100%;
-          padding: 9px;
-          border-radius: 13px;
-          background:
-            linear-gradient(180deg, rgba(204,255,0,0.12), rgba(204,255,0,0.045)),
-            rgba(11,18,32,0.68);
-          border: 0.5px solid rgba(204,255,0,0.22);
-          color: #CCFF00;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: .08em;
-          cursor: pointer;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 10px 28px rgba(0,0,0,0.18), 0 0 12px rgba(204,255,0,0.05);
-          transition: background .18s, border-color .18s, box-shadow .18s, transform .18s;
+          min-height: 32px;
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          padding: 8px 10px;
+          border-radius: 12px;
+          background: rgba(5, 12, 23, 0.52);
+          border: 0.5px solid rgba(56, 189, 248, 0.12);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
+          transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
         }
-        .vl-ws__btn:hover {
-          background:
-            linear-gradient(180deg, rgba(204,255,0,0.15), rgba(204,255,0,0.06)),
-            rgba(11,18,32,0.78);
-          border-color: rgba(204,255,0,0.32);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.11), 0 14px 32px rgba(0,0,0,0.24), 0 0 18px rgba(204,255,0,0.1);
-          transform: translateY(-1px);
+
+        .vl-ws__telemetry:hover {
+          background: rgba(5, 12, 23, 0.7);
+          border-color: rgba(74, 222, 128, 0.22);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.05),
+            0 0 18px rgba(56, 189, 248, 0.05);
+        }
+
+        .vl-ws__telemetry-track {
+          position: relative;
+          flex: 1;
+          min-width: 42px;
+          height: 4px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: rgba(148, 163, 184, 0.12);
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.45);
+        }
+
+        .vl-ws__telemetry-flow {
+          position: absolute;
+          inset: 0;
+          width: 58%;
+          border-radius: inherit;
+          background: linear-gradient(
+            90deg,
+            rgba(56,189,248,0) 0%,
+            rgba(56,189,248,0.78) 35%,
+            rgba(74,222,128,0.95) 70%,
+            rgba(182,255,46,0) 100%
+          );
+          filter: drop-shadow(0 0 4px rgba(56,189,248,0.4));
+          animation: vl-ws-telemetry-flow 1.75s cubic-bezier(.4,0,.2,1) infinite;
+        }
+
+        .vl-ws__telemetry-flow::after {
+          content: '';
+          position: absolute;
+          top: -2px;
+          right: 18%;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(182,255,46,0.72);
+          box-shadow: 0 0 10px rgba(74,222,128,0.72);
+          animation: vl-ws-telemetry-pulse 1.2s ease-in-out infinite;
+        }
+
+        .vl-ws__telemetry-label {
+          flex: 0 0 auto;
+          max-width: 54%;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          line-height: 1.2;
+          letter-spacing: .015em;
+          color: rgba(226, 232, 240, 0.68);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .vl-ws__telemetry[data-state='live'] .vl-ws__telemetry-label {
+          color: rgba(134, 239, 172, 0.78);
+        }
+
+        .vl-ws__telemetry[data-state='waiting'] .vl-ws__telemetry-flow {
+          opacity: .62;
+          animation-duration: 2.6s;
+        }
+
+        .vl-ws__telemetry[data-state='offline'] {
+          border-color: rgba(148, 163, 184, 0.1);
+        }
+
+        .vl-ws__telemetry[data-state='offline'] .vl-ws__telemetry-flow {
+          width: 100%;
+          opacity: .24;
+          animation: vl-ws-telemetry-pulse 1.8s ease-in-out infinite;
+        }
+
+        .vl-ws__telemetry[data-state='offline'] .vl-ws__telemetry-label {
+          color: rgba(148, 163, 184, 0.58);
+        }
+
+        @keyframes vl-ws-telemetry-flow {
+          0% { transform: translateX(-105%); opacity: .45; }
+          45% { opacity: 1; }
+          100% { transform: translateX(180%); opacity: .45; }
+        }
+
+        @keyframes vl-ws-telemetry-pulse {
+          0%, 100% { opacity: .35; transform: scale(.78); }
+          50% { opacity: 1; transform: scale(1); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .vl-ws__telemetry-flow,
+          .vl-ws__telemetry-flow::after {
+            animation: none !important;
+          }
+
+          .vl-ws__telemetry-flow {
+            width: 100%;
+            opacity: .7;
+          }
         }
       `}</style>
     </div>

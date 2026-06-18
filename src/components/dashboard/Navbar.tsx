@@ -49,21 +49,6 @@ export const Navbar: React.FC<NavbarProps> = ({ coachName, latency = 32 }) => {
       {/* ── Right: Actions + Coach ── */}
       <div className="vl2-nav__actions">
 
-        {/* Icon buttons */}
-        {[
-          { title: 'Analytics', d: 'M3 12L3 20M8 8L8 20M13 14L13 20M18 4L18 20' },
-          { title: 'Settings',  d: 'M12 15A3 3 0 1 0 12 9A3 3 0 0 0 12 15ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' },
-        ].map(({ title, d }) => (
-          <button key={title} title={title} className="vl2-icon-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="rgba(255,255,255,0.45)" strokeWidth="1.8" strokeLinecap="round">
-              <path d={d}/>
-            </svg>
-          </button>
-        ))}
-
-        <div className="vl2-nav__sep" />
-
         {/* Coach card */}
         <div className="vl2-coach-card">
           <div className="vl2-coach-av">
@@ -137,34 +122,6 @@ export const Navbar: React.FC<NavbarProps> = ({ coachName, latency = 32 }) => {
         .vl2-nav__actions {
           display: flex; align-items: center; gap: 8px;
           flex-shrink: 0;
-        }
-
-        .vl2-icon-btn {
-          width: 32px; height: 32px;
-          border-radius: 12px;
-          background:
-            linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025)),
-            rgba(11,18,32,0.62);
-          border: 0.5px solid var(--vl-border, rgba(255,255,255,0.08));
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 26px rgba(0,0,0,0.18);
-          backdrop-filter: blur(18px) saturate(128%);
-          -webkit-backdrop-filter: blur(18px) saturate(128%);
-          transition: border-color .18s, background .18s, box-shadow .18s, transform .18s;
-        }
-        .vl2-icon-btn:hover {
-          border-color: var(--vl-border-strong, rgba(255,255,255,0.14));
-          background:
-            linear-gradient(180deg, rgba(255,255,255,0.095), rgba(255,255,255,0.035)),
-            rgba(11,18,32,0.76);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.11), 0 14px 32px rgba(0,0,0,0.24);
-          transform: translateY(-1px);
-        }
-
-        .vl2-nav__sep {
-          width: 0.5px; height: 26px;
-          background: rgba(255,255,255,0.10);
         }
 
         .vl2-coach-card {

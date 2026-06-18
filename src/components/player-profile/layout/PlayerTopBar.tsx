@@ -1,13 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, RefreshCw, SlidersHorizontal, MoreHorizontal, ChevronDown } from 'lucide-react';
+import { Calendar, MoreHorizontal, ChevronDown } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PlayerTopBarProps {
   date?:          string;
-  onCompare?:     () => void;
-  onFilter?:      () => void;
   onMore?:        () => void;
 }
 
@@ -22,8 +20,6 @@ const formatDate = (d?: string) => {
 // ─── Component ────────────────────────────────────────────────────────────────
 export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
   date,
-  onCompare,
-  onFilter,
   onMore,
 }) => {
   const [dateOpen, setDateOpen] = useState(false);
@@ -49,26 +45,6 @@ export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
           transform: dateOpen ? 'rotate(180deg)' : 'none',
           transition: 'transform .2s',
         }}/>
-      </button>
-
-      {/* ── Compare ── */}
-      <button
-        className="vl-topbar__btn vl-topbar__btn--compare"
-        onClick={onCompare}
-        aria-label="Compare sessions"
-      >
-        <RefreshCw size={13} style={{ flexShrink: 0 }} />
-        <span>Compare</span>
-      </button>
-
-      {/* ── Filter ── */}
-      <button
-        className="vl-topbar__btn vl-topbar__btn--icon"
-        onClick={onFilter}
-        aria-label="Filter"
-        title="Filter"
-      >
-        <SlidersHorizontal size={14} />
       </button>
 
       {/* ── More ── */}
@@ -127,23 +103,6 @@ export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
         .vl-topbar__btn--date { padding: 7px 12px; }
         .vl-topbar__date-text {
           font-weight: 500; color: var(--vl-text);
-        }
-
-        /* Compare — brand yellow accent */
-        .vl-topbar__btn--compare {
-          color: #CCFF00;
-          background:
-            linear-gradient(180deg, rgba(204,255,0,0.12), rgba(204,255,0,0.04)),
-            rgba(11,18,32,0.68);
-          border-color: rgba(204,255,0,0.2);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 28px rgba(0,0,0,0.20), 0 0 12px rgba(204,255,0,0.05);
-        }
-        .vl-topbar__btn--compare:hover {
-          background:
-            linear-gradient(180deg, rgba(204,255,0,0.15), rgba(204,255,0,0.06)),
-            rgba(11,18,32,0.78);
-          border-color: rgba(204,255,0,0.3);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 32px rgba(0,0,0,0.24), 0 0 16px rgba(204,255,0,0.08);
         }
 
         /* Icon-only buttons */
