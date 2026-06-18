@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import {
-  Download, Settings, ChevronDown,
+  Download, Settings, ChevronDown, LoaderCircle,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -10,6 +10,8 @@ interface PlayerSidebarProps {
   coachName:       string;
   coachRole?:      string;
   avatarInitials?: string;
+  onExportReport?: () => void | Promise<void>;
+  isExportingReport?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -17,6 +19,8 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
   coachName,
   coachRole      = 'Performance Staff',
   avatarInitials,
+  onExportReport,
+  isExportingReport = false,
 }) => {
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -41,15 +45,23 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
 
       {/* Bottom utilities */}
       <div className="vl-sb__utils">
-        {[
-          { label: 'Export Report', icon: <Download size={15}/> },
-          { label: 'Settings',      icon: <Settings size={15}/> },
-        ].map(({ label, icon }) => (
-          <button key={label} className="vl-sb__util-btn">
-            <span className="vl-sb__icon">{icon}</span>
-            <span>{label}</span>
-          </button>
-        ))}
+        <button
+          className="vl-sb__util-btn"
+          type="button"
+          onClick={onExportReport}
+          disabled={!onExportReport || isExportingReport}
+          aria-busy={isExportingReport}
+        >
+          <span className={`vl-sb__icon${isExportingReport ? ' vl-sb__icon--spin' : ''}`}>
+            {isExportingReport ? <LoaderCircle size={15} /> : <Download size={15} />}
+          </span>
+          <span>{isExportingReport ? 'Exporting...' : 'Export Report'}</span>
+        </button>
+
+        <button className="vl-sb__util-btn" type="button">
+          <span className="vl-sb__icon"><Settings size={15} /></span>
+          <span>Settings</span>
+        </button>
       </div>
 
       {/* Coach profile */}
@@ -120,6 +132,12 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
         .vl-sb__icon {
           display: flex; align-items: center; flex-shrink: 0;
         }
+        .vl-sb__icon--spin {
+          animation: vl-sb-spin .8s linear infinite;
+        }
+        @keyframes vl-sb-spin {
+          to { transform: rotate(360deg); }
+        }
 
         /* ── Divider ─────────────────────────── */
         .vl-sb__divider {
@@ -152,6 +170,10 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
           color: var(--vl-muted);
           background: rgba(255,255,255,0.035);
           border-color: rgba(255,255,255,0.06);
+        }
+        .vl-sb__util-btn:disabled {
+          cursor: wait;
+          opacity: .72;
         }
 
         /* ── Coach profile ───────────────────── */

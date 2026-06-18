@@ -9,6 +9,8 @@ interface PlayerProfileLayoutProps {
   coachName:  string;
   children:   React.ReactNode;
   date?:      string;
+  onExportReport?: () => void | Promise<void>;
+  isExportingReport?: boolean;
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────
@@ -16,6 +18,8 @@ export const PlayerProfileLayout: React.FC<PlayerProfileLayoutProps> = ({
   coachName,
   children,
   date,
+  onExportReport,
+  isExportingReport = false,
 }) => {
   return (
     <div className="vl-layout">
@@ -23,6 +27,8 @@ export const PlayerProfileLayout: React.FC<PlayerProfileLayoutProps> = ({
       {/* Fixed left sidebar */}
       <PlayerSidebar
         coachName={coachName}
+        onExportReport={onExportReport}
+        isExportingReport={isExportingReport}
       />
 
       {/* Scrollable right area */}

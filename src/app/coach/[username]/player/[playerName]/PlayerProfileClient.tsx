@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 import { usePlayerDetail } from '@/application/hooks/usePlayerDetail';
@@ -8,6 +8,7 @@ import { usePlayerProfileRealtime } from '@/application/hooks/usePlayerProfileRe
 import { useAIAnalysis } from '@/application/hooks/useAIAnalysis';
 import { toPlayerProfile } from '@/application/mappers/toPlayerProfile';
 import { applyAIAnalysisToProfile } from '@/application/mappers/applyAIAnalysisToProfile';
+import { exportPlayerReport } from '@/application/utils/exportPlayerReport';
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 import { PlayerProfileLayout } from '@/components/player-profile/layout/PlayerProfileLayout';
@@ -45,6 +46,8 @@ interface PlayerProfileClientProps {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export function PlayerProfileClient({ coachName, beltId }: PlayerProfileClientProps) {
+  const [isExportingReport, setIsExportingReport] = useState(false);
+
   // Fetch real player data using beltId from query param
   const { player, loading, error } = usePlayerDetail(beltId);
   const aiAnalysis = useAIAnalysis(beltId || null);
@@ -201,6 +204,20 @@ export function PlayerProfileClient({ coachName, beltId }: PlayerProfileClientPr
   if (!p) return null;
 
   const aiContext = p.aiInsight.context;
+  const handleExportReport = async () => {
+    if (isExportingReport) return;
+
+    setIsExportingReport(true);
+
+    try {
+      await exportPlayerReport({ player: p, coachName });
+    } catch (exportError) {
+      console.error('Failed to export player report:', exportError);
+      window.alert('The player report could not be exported. Please try again.');
+    } finally {
+      setIsExportingReport(false);
+    }
+  };
 
   return (
     <>
@@ -211,6 +228,8 @@ export function PlayerProfileClient({ coachName, beltId }: PlayerProfileClientPr
 
       <PlayerProfileLayout
         coachName={coachName}
+        onExportReport={handleExportReport}
+        isExportingReport={isExportingReport}
       >
         {/* ── 1. Hero ─────────────────────────────────────────────────── */}
         <PlayerHero
