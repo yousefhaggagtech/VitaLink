@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Activity, Brain, Zap } from 'lucide-react';
+import { Activity, Brain, LoaderCircle, X, Zap } from 'lucide-react';
 import { Player } from '@/domain/entities/player';
 import { colors, font, radius, statusConfig } from '@/styles/tokens/colors';
 import { DonutRing }      from '@/components/ui/DonutRing';
@@ -22,7 +22,7 @@ import type { ProfileAIVisualState } from '@/application/mappers/toPlayerProfile
 interface PlayerCardProps {
   player:    Player;
   onClick?:  (player: Player) => void;
-  onDelete?: () => void;
+  onDelete?: (beltId: string) => Promise<void>;
 }
 
 type CardVars = React.CSSProperties & Record<string, string>;
@@ -108,10 +108,11 @@ const LoadRow: React.FC<{
   );
 };
 
-export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
+export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick, onDelete }) => {
   const router = useRouter();
   const params = useParams();
   const coachName = decodeURIComponent((params?.username as string) ?? '');
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   // Initialize realtime connection for live vitals
   const { livePlayer } = usePlayerCardRealtime({
@@ -157,6 +158,24 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
     e.currentTarget.style.setProperty('--sy','18%');
   };
 
+  const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+
+    if (!player.beltId || !onDelete || isDeleting) return;
+
+    const confirmed = window.confirm('Are you sure you want to remove this athlete?');
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+
+    try {
+      await onDelete(player.beltId);
+    } catch (error) {
+      console.error('[PlayerCard] Failed to delete player', error);
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div
       className={`vl2-card${isCritical ? ' is-critical' : ''}`}
@@ -172,6 +191,23 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
     >
       {/* Glassmorphism shine */}
       <div className="vl2-card__shine" />
+
+      {player.beltId && onDelete && (
+        <button
+          type="button"
+          className="vl2-delete"
+          onClick={handleDelete}
+          onPointerMove={event => event.stopPropagation()}
+          disabled={isDeleting}
+          aria-label={`Remove ${player.name}`}
+          title={`Remove ${player.name}`}
+        >
+          {isDeleting
+            ? <LoaderCircle className="vl2-delete__spinner" size={15} strokeWidth={2.5} />
+            : <X size={16} strokeWidth={2.8} />
+          }
+        </button>
+      )}
 
       {/* ── HERO ── */}
       <section className="vl2-hero">
@@ -341,6 +377,51 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
         /* All sections sit above glass layers */
         .vl2-hero, .vl2-vitals, .vl2-load, .vl2-no-belt { position: relative; z-index: 1; }
 
+        .vl2-delete {
+          position: absolute;
+          top: clamp(10px,1.5cqw,16px);
+          right: clamp(10px,1.5cqw,16px);
+          z-index: 3;
+          width: clamp(26px,3.2cqw,32px);
+          height: clamp(26px,3.2cqw,32px);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          color: #FFFFFF;
+          background: #DC2626;
+          border: 1px solid rgba(255,255,255,0.16);
+          border-radius: 8px;
+          box-shadow: 0 6px 16px rgba(220,38,38,0.28), inset 0 1px 0 rgba(255,255,255,0.16);
+          cursor: pointer;
+          transition: background-color 160ms ease, filter 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+        }
+
+        .vl2-delete:hover:not(:disabled) {
+          background: #B91C1C;
+          filter: brightness(1.05);
+          transform: translateY(-1px);
+          box-shadow: 0 8px 20px rgba(220,38,38,0.36), inset 0 1px 0 rgba(255,255,255,0.18);
+        }
+
+        .vl2-delete:focus-visible {
+          outline: 2px solid rgba(255,255,255,0.88);
+          outline-offset: 2px;
+        }
+
+        .vl2-delete:disabled {
+          cursor: wait;
+          opacity: 0.72;
+        }
+
+        .vl2-delete__spinner {
+          animation: vl2-delete-spin 700ms linear infinite;
+        }
+
+        @keyframes vl2-delete-spin {
+          to { transform: rotate(360deg); }
+        }
+
         /* ── Hero ─────────────────────────────────────────── */
         .vl2-hero {
           display: grid;
@@ -404,7 +485,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
         .vl2-status-col {
           display: flex; flex-direction: column; align-items: flex-end;
           gap: clamp(10px,2.4cqw,20px);
-          padding-top: clamp(5px,1.2cqw,10px);
+          padding-top: clamp(38px,4.8cqw,48px);
           min-width: 0;
         }
 
@@ -602,7 +683,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onClick }) => {
         /* ── Responsive ────────────────────────────────────── */
         @container (max-width: 640px) {
           .vl2-hero { grid-template-columns: minmax(0,.44fr) minmax(0,.56fr); }
-          .vl2-status-col { grid-column:1/-1; flex-direction:row; align-items:center; justify-content:space-between; padding-top:0; }
+          .vl2-status-col { grid-column:1/-1; flex-direction:row; align-items:center; justify-content:space-between; padding-top:0; padding-right: clamp(34px,5cqw,44px); }
           .vl2-vitals { grid-template-columns: 1fr; }
         }
         @container (max-width: 460px) {

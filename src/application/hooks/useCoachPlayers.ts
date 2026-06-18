@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Player }               from '@/domain/entities/player';
 import { toPlayer }             from '@/application/mappers/toPlayer';
 import { getCoachPlayers }      from '@/application/use-cases/getCoachPlayer';
+import { deleteCoachPlayer }    from '@/application/use-cases/deleteCoachPlayer';
 import { extractUserFromToken } from '@/application/use-cases/extractUserFromToken';
 
 // ─── Return type ──────────────────────────────────────────────────────────────
@@ -14,7 +15,8 @@ interface UseCoachPlayersReturn {
   loading:   boolean;
   error:     string | null;
   isEmpty:   boolean;            // true when loaded but no players yet
-  refetch:   () => void;         // call after add / delete player
+  refetch:   () => Promise<void>;
+  deletePlayer: (beltId: string) => Promise<void>;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -56,11 +58,19 @@ export function useCoachPlayers(coachNameOverride?: string): UseCoachPlayersRetu
     fetchPlayers();
   }, [fetchPlayers]);
 
+  const deletePlayer = useCallback(async (beltId: string) => {
+    await deleteCoachPlayer(beltId);
+    setPlayers(currentPlayers =>
+      currentPlayers.filter(player => player.beltId !== beltId),
+    );
+  }, []);
+
   return {
     players,
     loading,
     error,
     isEmpty: !loading && !error && players.length === 0,
     refetch: fetchPlayers,
+    deletePlayer,
   };
 }

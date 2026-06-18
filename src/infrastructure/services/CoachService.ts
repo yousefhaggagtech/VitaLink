@@ -29,6 +29,14 @@ export class CoachService implements ICoachRepository {
       data,
     );
   }
+
+  // DELETE /api/AthleteProfiles/deletebelt?id={beltId}
+  async deletePlayer(beltId: string): Promise<void> {
+    await axiosInstance.delete(
+      '/api/AthleteProfiles/deletebelt',
+      { params: { id: beltId } },
+    );
+  }
 }
 
 // Singleton instance

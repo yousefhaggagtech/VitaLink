@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Navbar } from '@/components/dashboard/Navbar';
 import { AlertBanner } from '@/components/dashboard/AlertBanner';
@@ -15,9 +15,37 @@ export default function CoachDashboardPage() {
   const params = useParams();
   const coachName = decodeURIComponent((params?.username as string) ?? 'Coach');
 
-  const { players, loading, error, refetch } = useCoachPlayers(coachName);
+  const { players, loading, error, refetch, deletePlayer } = useCoachPlayers(coachName);
   const [showModal, setShowModal] = useState(false);
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const criticalPlayers = players.filter(p => p.status === 'critical');
+
+  useEffect(() => {
+    if (!notification) return;
+
+    const timeoutId = window.setTimeout(() => setNotification(null), 3500);
+    return () => window.clearTimeout(timeoutId);
+  }, [notification]);
+
+  const handleDeletePlayer = async (beltId: string) => {
+    try {
+      await deletePlayer(beltId);
+      setNotification({
+        type: 'success',
+        message: 'Athlete removed successfully.',
+      });
+    } catch (deleteError) {
+      console.error('[CoachDashboardPage] Failed to delete player', deleteError);
+      setNotification({
+        type: 'error',
+        message: 'Unable to remove this athlete. Please try again.',
+      });
+      throw deleteError;
+    }
+  };
 
   return (
     <>
@@ -35,6 +63,10 @@ export default function CoachDashboardPage() {
         input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.45); }
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        @keyframes vl-toast-in {
+          from { opacity: 0; transform: translateY(8px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .vl-coach-dashboard {
           --vl-bg-0: #050816;
@@ -212,7 +244,7 @@ export default function CoachDashboardPage() {
                   <PlayerCard
                     key={player.id}
                     player={player}
-                    onDelete={() => refetch()}
+                    onDelete={handleDeletePlayer}
                   />
                 ))
               )}
@@ -231,6 +263,36 @@ export default function CoachDashboardPage() {
             setShowModal(false);
           }}
         />
+      )}
+
+      {notification && (
+        <div
+          role={notification.type === 'error' ? 'alert' : 'status'}
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            right: '20px',
+            bottom: '20px',
+            zIndex: 1000,
+            maxWidth: 'min(360px, calc(100vw - 40px))',
+            padding: '12px 16px',
+            color: '#F8FAFC',
+            background: notification.type === 'success'
+              ? 'rgba(22,101,52,0.96)'
+              : 'rgba(153,27,27,0.96)',
+            border: `1px solid ${notification.type === 'success'
+              ? 'rgba(74,222,128,0.42)'
+              : 'rgba(248,113,113,0.42)'}`,
+            borderRadius: '12px',
+            boxShadow: '0 18px 50px rgba(0,0,0,0.42)',
+            backdropFilter: 'blur(16px)',
+            fontSize: '13px',
+            fontWeight: 600,
+            animation: 'vl-toast-in 180ms ease-out',
+          }}
+        >
+          {notification.message}
+        </div>
       )}
     </>
   );
