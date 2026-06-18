@@ -242,7 +242,7 @@ export function PlayerProfileClient({ coachName, beltId }: PlayerProfileClientPr
           position={p.position}   jerseyNumber={p.jerseyNumber}
           status={p.status}       imageUrl={p.imageUrl}
           age={p.age}             weight={p.weight}
-          height={p.height}       foot={p.foot}
+          height={174}            foot={p.foot}
           bloodType={p.bloodType} beltId={p.beltId}
           lastSession={p.lastSession}
         />

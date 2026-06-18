@@ -59,7 +59,7 @@ export const GeminiInsightsPanel: React.FC<GeminiInsightsPanelProps> = ({
             stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
           </svg>
-          <h2 className="vl-gem__title" id="vl-gem-title">GEMINI AI</h2>
+          <h2 className="vl-gem__title" id="vl-gem-title">MODEL AI</h2>
 
           {/* Live dot */}
           {isLive && (
