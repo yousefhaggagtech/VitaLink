@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { HealthStatusChartProps } from "@/domain/types/types";
 import ChartWrapper from "@/app/dashboard/components/Charts/ChartWrapper";
 import GSRLevelIndicator from "@/app/dashboard/components/metrics/Gsrlevelindicator";
+import { getEffortLevel } from "@/lib/effortLevel";
 import dynamic from "next/dynamic";
  
 const AreaChart = dynamic(() => import("recharts").then(mod => mod.AreaChart), { ssr: false });
@@ -45,7 +46,8 @@ const GSRTrendChart: React.FC<HealthStatusChartProps> = ({ historicalData, theme
         {latest && (
           /*
             latest.sweat is the raw sensor value (0–100 scale).
-            Pass it directly — thresholds (0–40 / 41–75 / 76+) apply at this scale.
+            Pass it directly — effort thresholds (0–50 / >50–75 / >75)
+            apply at this scale.
           */
           <GSRLevelIndicator
             rawValue={latest.sweat}
@@ -81,6 +83,9 @@ const GSRTrendChart: React.FC<HealthStatusChartProps> = ({ historicalData, theme
             tickLine={false}
             axisLine={false}
             width={40}
+            domain={[0, 100]}
+            ticks={[25, 62.5, 87.5]}
+            tickFormatter={(value) => getEffortLevel(Number(value))}
           />
           <Tooltip
             contentStyle={{
@@ -91,6 +96,7 @@ const GSRTrendChart: React.FC<HealthStatusChartProps> = ({ historicalData, theme
             }}
             labelStyle={{ color: theme.text.secondary }}
             itemStyle={{ color }}
+            formatter={(value) => [getEffortLevel(Number(value)), "Effort level"]}
           />
  
          

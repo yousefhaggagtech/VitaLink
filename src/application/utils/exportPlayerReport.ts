@@ -1,4 +1,5 @@
 import type { PlayerProfileData } from '@/application/mappers/toPlayerProfile';
+import { getEffortLevel } from '@/lib/effortLevel';
 
 const REPORT_WIDTH = 794;
 const REPORT_HEIGHT = 1123;
@@ -178,9 +179,9 @@ function buildReportMarkup(
       tone: 'amber' as MetricTone,
     },
     {
-      label: 'GSR / stress',
-      value: formatNumber(player.vitals.stress.value),
-      unit: '%',
+      label: 'Effort level',
+      value: getEffortLevel(player.vitals.stress.value),
+      unit: '',
       detail: getStressInsight(player.vitals.stress.value),
       tone: 'violet' as MetricTone,
     },

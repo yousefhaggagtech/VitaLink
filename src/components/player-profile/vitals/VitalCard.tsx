@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { MiniSparkline } from '@/components/player-profile/vitals/MiniSparkLine';
+import { getEffortLevel } from '@/lib/effortLevel';
+import type { EffortLevel } from '@/lib/effortLevel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type VitalId = 'heartRate' | 'spO2' | 'temperature' | 'stress';
@@ -22,6 +24,28 @@ interface VitalConfig {
   getInsight:      (v: number) => string;
   getInsightColor: (v: number) => string;
 }
+
+const EFFORT_STATUS: Record<EffortLevel, {
+  color: string;
+  bg: string;
+  border: string;
+}> = {
+  Low: {
+    color: '#B6FF2E',
+    bg: 'rgba(182,255,46,0.09)',
+    border: 'rgba(182,255,46,0.22)',
+  },
+  Medium: {
+    color: '#FFB800',
+    bg: 'rgba(255,184,0,0.09)',
+    border: 'rgba(255,184,0,0.20)',
+  },
+  High: {
+    color: '#FF5A5F',
+    bg: 'rgba(255,90,95,0.09)',
+    border: 'rgba(255,90,95,0.22)',
+  },
+};
 
 const VITAL_CONFIG: Record<VitalId, VitalConfig> = {
   heartRate: {
@@ -70,8 +94,8 @@ const VITAL_CONFIG: Record<VitalId, VitalConfig> = {
   },
 
   stress: {
-    label: 'GSR / STRESS',
-    unit:  '%',
+    label: 'EFFORT LEVEL',
+    unit:  '',
     color: '#8B5CF6',
     rgb:   '139,92,246',
     icon: (
@@ -90,10 +114,13 @@ export const VitalCard: React.FC<VitalCardProps> = ({ id, value, history }) => {
   const cfg          = VITAL_CONFIG[id];
   const insight      = cfg.getInsight(value);
   const insightColor = cfg.getInsightColor(value);
+  const effortLevel  = id === 'stress' ? getEffortLevel(value) : null;
+  const effortStatus = effortLevel ? EFFORT_STATUS[effortLevel] : null;
 
-  const displayValue = id === 'temperature'
-    ? value.toFixed(1)
-    : Math.round(value);
+  const displayValue =
+    id === 'temperature'
+        ? value.toFixed(1)
+        : Math.round(value);
 
   return (
     <div
@@ -108,8 +135,30 @@ export const VitalCard: React.FC<VitalCardProps> = ({ id, value, history }) => {
 
       {/* ── Value ── */}
       <div className="vl-vital__value-row">
-        <span className="vl-vital__value" style={{ color: cfg.color }}>{displayValue}</span>
-        <span className="vl-vital__unit">{cfg.unit}</span>
+        {effortLevel && effortStatus ? (
+          <div
+            className={`vl-vital__effort-pill${effortLevel === 'High' ? ' is-high' : ''}`}
+            style={{
+              color: effortStatus.color,
+              background: effortStatus.bg,
+              borderColor: effortStatus.border,
+            }}
+            role="status"
+            aria-label={`Effort level: ${effortLevel}`}
+          >
+            <span
+              className="vl-vital__effort-dot"
+              style={{ background: effortStatus.color }}
+              aria-hidden
+            />
+            <span>{effortLevel.toUpperCase()}</span>
+          </div>
+        ) : (
+          <>
+            <span className="vl-vital__value" style={{ color: cfg.color }}>{displayValue}</span>
+            {cfg.unit && <span className="vl-vital__unit">{cfg.unit}</span>}
+          </>
+        )}
       </div>
 
       {/* ── Insight ── */}
@@ -188,6 +237,7 @@ export const VitalCard: React.FC<VitalCardProps> = ({ id, value, history }) => {
         .vl-vital__value-row {
           display: flex; align-items: baseline; gap: 4px; line-height: 1;
           position: relative; z-index: 1;
+          min-height: 30px;
         }
 
         .vl-vital__value {
@@ -200,6 +250,41 @@ export const VitalCard: React.FC<VitalCardProps> = ({ id, value, history }) => {
           font-family: 'DM Sans', sans-serif;
           font-size: 12px; font-weight: 500;
           color: var(--vl-muted); padding-bottom: 2px;
+        }
+
+        .vl-vital__effort-pill {
+          display: inline-flex;
+          align-items: center;
+          align-self: center;
+          gap: 7px;
+          padding: 7px 12px;
+          border: 0.5px solid;
+          border-radius: 9999px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: .08em;
+          line-height: 1;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
+
+        .vl-vital__effort-pill.is-high {
+          animation: vl-vital-effort-high 1.8s ease-in-out infinite;
+        }
+
+        @keyframes vl-vital-effort-high {
+          0%,100% { opacity: 1; }
+          50% { opacity: .68; }
+        }
+
+        .vl-vital__effort-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          box-shadow: 0 0 10px currentColor;
         }
 
         .vl-vital__insight {

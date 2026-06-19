@@ -178,7 +178,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
             {/*
               value is gsrValue = gsrLevel × 13 (Ohms, 0–1300).
               Divide by 13 to recover the raw 0–100 scale the
-              level thresholds (0–40 / 41–75 / 76+) are designed for.
+              effort thresholds (0–50 / >50–75 / >75) are designed for.
             */}
             <GSRLevelIndicator
               rawValue={value / 13}
@@ -196,7 +196,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
           {/* Footer: show level range instead of numeric range */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "10px", color: theme.text.tertiary }}>
-              Low · Medium · Good
+              Low · Medium · High
             </span>
             <span style={{
               fontSize: "10px", fontWeight: 700, letterSpacing: "0.05em",
@@ -261,4 +261,3 @@ const MetricCard: React.FC<MetricCardProps> = ({
 };
  
 export default MetricCard;
- 

@@ -2,31 +2,46 @@
  
 import React, { useState } from "react";
 import { Theme } from "@/domain/types/types";
+import { UI_THRESHOLDS } from "@/domain/constants";
+import { getEffortLevel } from "@/lib/effortLevel";
+import type { EffortLevel } from "@/lib/effortLevel";
  
 // ── Level definitions ─────────────────────────────────────────────────
 // Thresholds apply to the RAW gsr value (0–100 scale).
 // • Callers using scaled values (e.g. Ohms = gsrLevel × 13)
 //   should divide by 13 before passing here.
  
-export type GSRLevel = "Low" | "Medium" | "Good";
- 
 interface LevelConfig {
-  label: GSRLevel;
+  label: EffortLevel;
   color: string;       // active fill / glow color
   dimColor: string;    // inactive segment color
   range: string;       // shown in tooltip
 }
  
 const LEVELS: LevelConfig[] = [
-  { label: "Low",    color: "#EF4444", dimColor: "#EF444430", range: "0 – 40"  },
-  { label: "Medium", color: "#F59E0B", dimColor: "#F59E0B30", range: "41 – 75" },
-  { label: "Good",   color: "#22C55E", dimColor: "#22C55E30", range: "76+"     },
+  {
+    label: "Low",
+    color: "#22C55E",
+    dimColor: "#22C55E30",
+    range: `0 – ${UI_THRESHOLDS.STRESS_MEDIUM}`,
+  },
+  {
+    label: "Medium",
+    color: "#F59E0B",
+    dimColor: "#F59E0B30",
+    range: `>${UI_THRESHOLDS.STRESS_MEDIUM} – ${UI_THRESHOLDS.STRESS_HIGH}`,
+  },
+  {
+    label: "High",
+    color: "#EF4444",
+    dimColor: "#EF444430",
+    range: `>${UI_THRESHOLDS.STRESS_HIGH}`,
+  },
 ];
  
 export function getGSRLevel(rawValue: number): LevelConfig {
-  if (rawValue <= 40) return LEVELS[0];
-  if (rawValue <= 75) return LEVELS[1];
-  return LEVELS[2];
+  const level = getEffortLevel(rawValue);
+  return LEVELS.find(config => config.label === level) ?? LEVELS[0];
 }
  
 // ── Props ─────────────────────────────────────────────────────────────
@@ -34,7 +49,7 @@ interface GSRLevelIndicatorProps {
   /** Raw GSR value on 0–100 scale. For scaled values (Ohms), divide by 13 first. */
   rawValue: number;
   theme: Theme;
-  /** Show the actual numeric value in the tooltip. Default: true */
+  /** Show the active level range in the tooltip. Default: true */
   showTooltip?: boolean;
   /** "compact" fits inside the MetricCard value area. "full" is for chart headers. */
   variant?: "compact" | "full";
@@ -109,7 +124,7 @@ const GSRLevelIndicator: React.FC<GSRLevelIndicatorProps> = ({
         </span>
       </div>
  
-      {/* ── Tooltip (shows actual value on hover) ────────────────────── */}
+      {/* ── Tooltip (shows the active category without the raw value) ── */}
       {showTooltip && hovered && (
         <div
           style={{
@@ -128,12 +143,12 @@ const GSRLevelIndicator: React.FC<GSRLevelIndicatorProps> = ({
           }}
         >
           <p style={{ fontSize: "11px", color: theme.text.tertiary, margin: "0 0 2px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Raw GSR Value
+            Effort level
           </p>
           <p style={{ fontSize: "13px", color: active.color, fontWeight: 700, margin: 0 }}>
-            {rawValue.toFixed(1)}
+            {active.label}
             <span style={{ color: theme.text.tertiary, fontWeight: 400, marginLeft: "4px" }}>
-              / 100 — {active.range}
+              ({active.range})
             </span>
           </p>
           {/* Tooltip arrow */}
